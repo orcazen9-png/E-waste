@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import type { Lot, RecyclerMatch } from '@ewaste/shared';
 
@@ -35,7 +35,8 @@ type Route =
   | { name: 'safety' };
 
 function Router() {
-  const { ready, language, signedIn, demoMode } = useApp();
+  const { ready, language, signedIn, demoMode, initStage, initError, retryInit } = useApp();
+  const [slow, setSlow] = useState(false);
   const [onboarded, setOnboarded] = useState<boolean | undefined>();
   const [route, setRoute] = useState<Route>({ name: 'home' });
   const [totals, setTotals] = useState({ pending: 0, week: 0 });
@@ -43,6 +44,14 @@ function Router() {
   useEffect(() => {
     if (!ready) return;
     void getMeta('onboarded').then((value) => setOnboarded(value === '1'));
+  }, [ready]);
+
+  // A spinner that never resolves tells nobody anything. After ten seconds,
+  // say which step is stuck so the problem is reportable from the screen.
+  useEffect(() => {
+    if (ready) return;
+    const timer = setTimeout(() => setSlow(true), 10_000);
+    return () => clearTimeout(timer);
   }, [ready]);
 
   // Home shows money; recompute whenever we land back on it.
@@ -58,10 +67,23 @@ function Router() {
 
   const goHome = useMemo(() => () => setRoute({ name: 'home' }), []);
 
+  if (initError) {
+    return <StartupError stage={initStage} message={initError} onRetry={retryInit} />;
+  }
+
   if (!ready || onboarded === undefined) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
+        {slow && (
+          <>
+            <Text style={styles.slowTitle}>Still starting…</Text>
+            <Text style={styles.slowStage}>Step: {initStage}</Text>
+            <Pressable style={styles.retry} onPress={retryInit}>
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </>
+        )}
       </View>
     );
   }
@@ -124,6 +146,37 @@ function Router() {
   }
 }
 
+/**
+ * Shown when startup fails. Deliberately plain English and scrollable: it is a
+ * bug report, meant to be screenshotted and sent, not a user-facing screen.
+ */
+function StartupError({
+  stage,
+  message,
+  onRetry,
+}: {
+  stage: string;
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={styles.errorBody}>
+      <Text style={styles.errorGlyph}>⚠️</Text>
+      <Text style={styles.errorTitle}>The app could not start</Text>
+      <Text style={styles.errorStage}>Failed while: {stage}</Text>
+      <Text style={styles.errorMessage} selectable>
+        {message}
+      </Text>
+      <Pressable style={styles.retry} onPress={onRetry}>
+        <Text style={styles.retryText}>Try again</Text>
+      </Pressable>
+      <Text style={styles.errorHint}>
+        Screenshot this screen — the two lines above say exactly what broke.
+      </Text>
+    </ScrollView>
+  );
+}
+
 export function App() {
   return (
     <AppProvider>
@@ -134,5 +187,44 @@ export function App() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg,
+    gap: 12,
+    padding: 24,
+  },
+  slowTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 12 },
+  slowStage: { fontSize: 15, color: colors.textMuted, textAlign: 'center' },
+  errorBody: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+    backgroundColor: colors.bg,
+  },
+  errorGlyph: { fontSize: 52 },
+  errorTitle: { fontSize: 22, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  errorStage: { fontSize: 16, color: colors.text, textAlign: 'center' },
+  errorMessage: {
+    fontSize: 14,
+    color: colors.danger,
+    backgroundColor: colors.dangerBg,
+    padding: 14,
+    borderRadius: 12,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+  },
+  errorHint: { fontSize: 13, color: colors.textMuted, textAlign: 'center' },
+  retry: {
+    minHeight: 52,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: { color: colors.primaryText, fontSize: 17, fontWeight: '700' },
 });

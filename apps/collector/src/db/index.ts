@@ -13,14 +13,41 @@ import {
 import { MIGRATIONS, SCHEMA_VERSION } from './schema.ts';
 
 let database: SQLite.SQLiteDatabase | undefined;
+/**
+ * The in-flight open, not just the result. Several callers race to open on
+ * startup, and caching only the resolved handle let two of them run the
+ * migration concurrently - two transactions against the same file, which can
+ * deadlock and leave the app on its loading spinner with nothing logged.
+ */
+let opening: Promise<SQLite.SQLiteDatabase> | undefined;
 
 export async function openDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (database) return database;
-  const db = await SQLite.openDatabaseAsync('ewaste.db');
-  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-  await migrate(db);
-  database = db;
-  return db;
+  if (opening) return opening;
+
+  opening = (async () => {
+    const db = await SQLite.openDatabaseAsync('ewaste.db');
+    await db.execAsync('PRAGMA foreign_keys = ON');
+    // journal_mode returns a row, so it is a query, not a statement. It is
+    // also only an optimisation: a device that refuses WAL should still get a
+    // working app.
+    try {
+      await db.getFirstAsync('PRAGMA journal_mode = WAL');
+    } catch {
+      /* fall back to the default journal mode */
+    }
+    await migrate(db);
+    database = db;
+    return db;
+  })();
+
+  try {
+    return await opening;
+  } catch (error) {
+    // Let the next caller retry rather than caching a rejected promise.
+    opening = undefined;
+    throw error;
+  }
 }
 
 async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
@@ -29,9 +56,11 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
   for (let version = current; version < SCHEMA_VERSION; version++) {
     const statements = MIGRATIONS[version];
     if (!statements) continue;
-    await db.withTransactionAsync(async () => {
-      for (const statement of statements) await db.execAsync(statement);
-    });
+    // Statements are applied directly rather than inside withTransactionAsync:
+    // every one is CREATE TABLE/INDEX IF NOT EXISTS, so a partial application
+    // is safely re-runnable, and the transaction wrapper was the thing most
+    // likely to deadlock against a concurrent open.
+    for (const statement of statements) await db.execAsync(statement);
   }
   if (current < SCHEMA_VERSION) await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
 }

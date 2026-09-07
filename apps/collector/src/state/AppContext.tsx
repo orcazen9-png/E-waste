@@ -33,6 +33,14 @@ import { DEMO_DISTRICT, seedDemoData } from '../demo/index.ts';
 
 interface AppState {
   ready: boolean;
+  /**
+   * How far startup got, and what went wrong if it did. Without this a failed
+   * init is an infinite spinner with no way to tell what broke - which is
+   * exactly what happened on the first real device.
+   */
+  initStage: string;
+  initError?: string;
+  retryInit: () => void;
   language: LanguageCode;
   setLanguage: (language: LanguageCode) => Promise<void>;
   collectorId: string;
@@ -76,6 +84,9 @@ const META = {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
+  const [initStage, setInitStage] = useState('starting');
+  const [initError, setInitError] = useState<string>();
+  const [initAttempt, setInitAttempt] = useState(0);
   const [language, setLanguageState] = useState<LanguageCode>('mr');
   const [collectorId, setCollectorId] = useState('');
   const [deviceId, setDeviceId] = useState('');
@@ -101,44 +112,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const stage = (name: string) => {
+      if (!cancelled) setInitStage(name);
+    };
+
     void (async () => {
-      await openDatabase();
+      try {
+        stage('opening database');
+        await openDatabase();
 
       // Identity is created on the device, not handed down by a server: the app
       // has to be usable the first time it is opened, with no signal.
-      const storedCollector = (await getMeta(META.collectorId)) ?? newId('COL');
-      const storedDevice = (await getMeta(META.deviceId)) ?? newId('DEV');
-      // The secret that signs handover slips never leaves the phone.
-      const storedSecret = (await getMeta(META.deviceSecret)) ?? `${newId('SEC')}${newId('SEC')}`;
-      await setMeta(META.collectorId, storedCollector);
-      await setMeta(META.deviceId, storedDevice);
-      await setMeta(META.deviceSecret, storedSecret);
+        stage('creating identity');
+        const storedCollector = (await getMeta(META.collectorId)) ?? newId('COL');
+        const storedDevice = (await getMeta(META.deviceId)) ?? newId('DEV');
+        // The secret that signs handover slips never leaves the phone.
+        const storedSecret = (await getMeta(META.deviceSecret)) ?? `${newId('SEC')}${newId('SEC')}`;
+        await setMeta(META.collectorId, storedCollector);
+        await setMeta(META.deviceId, storedDevice);
+        await setMeta(META.deviceSecret, storedSecret);
 
-      // Restore the session. An expired token is treated as absent rather
-      // than left to 401 every background sync.
-      const storedToken = await getMeta(META.accessToken);
-      const tokenExpiresAt = await getMeta(META.tokenExpiresAt);
-      if (storedToken && (!tokenExpiresAt || Date.parse(tokenExpiresAt) > Date.now())) {
-        setAccessToken(storedToken);
-        setSignedIn(true);
+        stage('restoring session');
+        // Restore the session. An expired token is treated as absent rather
+        // than left to 401 every background sync.
+        const storedToken = await getMeta(META.accessToken);
+        const tokenExpiresAt = await getMeta(META.tokenExpiresAt);
+        if (storedToken && (!tokenExpiresAt || Date.parse(tokenExpiresAt) > Date.now())) {
+          setAccessToken(storedToken);
+          setSignedIn(true);
+        }
+
+        if ((await getMeta(META.demoMode)) === '1') setDemoMode(true);
+
+        stage('reading settings');
+        const storedLanguage = (await getMeta(META.language)) as LanguageCode | undefined;
+        const deviceLanguage = detectLanguage();
+        const storedDistrict = (await getMeta(META.district)) ?? 'Pune';
+
+        setCollectorId(storedCollector);
+        setDeviceId(storedDevice);
+        setDeviceSecret(storedSecret);
+        setLanguageState(storedLanguage ?? deviceLanguage);
+        setDistrictState(storedDistrict);
+
+        stage('loading cached data');
+        await refreshLocalData();
+
+        if (cancelled) return;
+        setInitError(undefined);
+        setReady(true);
+      } catch (error) {
+        if (cancelled) return;
+        setInitError(error instanceof Error ? `${error.name}: ${error.message}` : String(error));
       }
-
-      if ((await getMeta(META.demoMode)) === '1') setDemoMode(true);
-
-      const storedLanguage = (await getMeta(META.language)) as LanguageCode | undefined;
-      const deviceLanguage = detectLanguage();
-      const storedDistrict = (await getMeta(META.district)) ?? 'Pune';
-
-      setCollectorId(storedCollector);
-      setDeviceId(storedDevice);
-      setDeviceSecret(storedSecret);
-      setLanguageState(storedLanguage ?? deviceLanguage);
-      setDistrictState(storedDistrict);
-
-      await refreshLocalData();
-      setReady(true);
     })();
-  }, [refreshLocalData]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshLocalData, initAttempt]);
 
   const syncNow = useCallback(async () => {
     // Demo mode never talks to a server, and with no token there is nothing to
@@ -211,6 +244,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppState>(
     () => ({
       ready,
+      initStage,
+      initError,
+      retryInit: () => {
+        setInitError(undefined);
+        setInitAttempt((n) => n + 1);
+      },
       language,
       setLanguage: async (next) => {
         setLanguageState(next);
@@ -241,6 +280,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     [
       ready,
+      initStage,
+      initError,
       language,
       collectorId,
       deviceId,
@@ -277,7 +318,13 @@ export function useValuer(): RuleBasedValuer | undefined {
 }
 
 function detectLanguage(): LanguageCode {
-  const tag = Localization.getLocales()[0]?.languageCode ?? 'mr';
+  // Wrapped: a locale lookup failing is not worth blocking startup over.
+  let tag: string | null | undefined;
+  try {
+    tag = Localization.getLocales()[0]?.languageCode;
+  } catch {
+    tag = undefined;
+  }
   if (tag === 'hi') return 'hi';
   if (tag === 'en') return 'en';
   return 'mr';
