@@ -6,6 +6,7 @@ import {
   RuleBasedAnomalyDetector,
   createHandover,
   splitForKey,
+  ID_ALPHABET,
   type Collector,
   type HandoverRecord,
   type Lot,
@@ -508,6 +509,9 @@ export function generateActivity(rng: Rng, options: ActivityOptions) {
       },
       `synthetic-device-secret-${collector.collectorId}`,
       items.flatMap((it) => it.imageRefs),
+      // Seeded, so regenerating the dataset produces identical files. The app
+      // never passes this - it mints a random reference on the device.
+      seededHandoverRef(rng),
     );
     handover.confirmationStatus = rng.bool(0.94) ? 'confirmed' : 'pending';
     if (handover.confirmationStatus === 'confirmed') {
@@ -695,6 +699,13 @@ export function generateDataset(options: GenerateOptions = {}): GeneratedDataset
     trainingSamples,
     injectedAnomalies: activity.injectedAnomalies,
   };
+}
+
+/** A handover reference drawn from the seeded stream, in the same format as the real one. */
+function seededHandoverRef(rng: Rng): string {
+  const block = () =>
+    Array.from({ length: 4 }, () => ID_ALPHABET[rng.int(0, ID_ALPHABET.length - 1)]).join('');
+  return `HO-${block()}-${block()}`;
 }
 
 function monthKey(date: Date): string {

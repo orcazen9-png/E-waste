@@ -36,10 +36,10 @@ as a market fact.
 | `collectors.csv` | 60 | Collector dataset: minimal profile — id, language, operating district, earnings counters. |
 | `lots.csv` | 1,400 | Lot header: collector, status, weight, estimated value, collection place and time. |
 | `materials.csv` | ~2,650 | Material dataset: category, sub-category, image ref, weight, condition, source type, estimated value. |
-| `transactions.csv` | ~1,040 | Transaction dataset: lot, collector, recycler, quoted vs final price, payment status/mode, anomaly flags. |
-| `traceability.csv` | ~1,040 | Traceability dataset: handover ref, digest, photo hashes, declared vs weighed weight, GPS, confirmation, downstream status. |
+| `transactions.csv` | ~1,030 | Transaction dataset: lot, collector, recycler, quoted vs final price, payment status/mode, anomaly flags. |
+| `traceability.csv` | ~1,030 | Traceability dataset: handover ref, digest, photo hashes, declared vs weighed weight, GPS, confirmation, downstream status. |
 | `training_manifest.csv` | ~2,650 | AI/ML manifest: image ref + label + weight + district + settled price, with a deterministic train/val/test split. |
-| `anomaly_ground_truth.csv` | 56 | Which transactions were deliberately made bad, and how. Used to score the detector. |
+| `anomaly_ground_truth.csv` | 50 | Which transactions were deliberately made bad, and how. Used to score the detector. |
 | `price_index.json` | — | Derived artefact: the compact per-district price summary that ships to phones for offline valuation. |
 
 Total ≈ 4.2 MB. CSV throughout, so every file opens in a spreadsheet.
@@ -80,7 +80,7 @@ gate on it:
   rate updates from recyclers, so the seed and the field share one contract.
 - **Referential integrity** — nine foreign-key relationships (materials → lots,
   transactions → recyclers, traceability → transactions, and so on).
-- **Cryptographic integrity** — all ~1,040 handover digests are re-verified.
+- **Cryptographic integrity** — all ~1,030 handover digests are re-verified.
   A traceability record whose digest does not recompute is worthless.
 - **Coverage** — every one of the 28 sub-categories has price observations,
   and thin district cells are reported as warnings (they fall back to the
@@ -99,18 +99,23 @@ rule-based services against the ground truth:
 
 ```
 Anomaly detection vs injected ground truth
-  transactions        1042
-  injected anomalies  56
-  flagged             57
-  true positives      56      false positives 1      false negatives 0
-  precision           0.982   recall 1.000           f1 0.991
+  transactions        1033
+  injected anomalies  50
+  flagged             52
+  true positives      50      false positives 2      false negatives 0
+  precision           0.962   recall 1.000           f1 0.980
 
   recall by injected kind
-    underpayment       24/24   weight_shortfall 12/12   duplicate_photo 20/20
+    underpayment       21/21   weight_shortfall 14/14   duplicate_photo 15/15
 
 Valuation estimate vs settled price (clean transactions only)
-  median error 4.7%   mean absolute error 5.5%   within 20%: 99.9%
+  median error 4.3%   mean absolute error 5.3%   within 20%: 99.9%
 ```
+
+The script asserts thresholds and exits non-zero below them (precision 0.90,
+recall 0.95, per-failure-mode recall 0.90, median valuation error 10%), so CI
+fails on a regression rather than printing a worse number nobody reads. Both
+defects below would trip it.
 
 **Read these numbers correctly.** They score the rules against synthetic data
 produced by a related process, so they are a *regression baseline* — they prove

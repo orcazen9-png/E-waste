@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep Metro and tsc from being OOM-killed on the standard runner.
+  NODE_OPTIONS: --max-old-space-size=4096
+
+jobs:
+  verify:
+    name: Typecheck, test and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The API imports @prisma/client, so its types must exist before
+      # anything typechecks. pnpm does not run the package's postinstall.
+      - name: Generate Prisma client
+        run: pnpm --filter @ewaste/api prisma:generate
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Validate datasets
+        run: pnpm data:validate
+
+      # The generator is seeded, so identical inputs must produce identical
+      # files. A diff here means the generator changed - which is fine, but it
+      # has to be committed deliberately rather than drifting.
+      - name: Check the seed dataset is reproducible
+        run: |
+          pnpm data:generate
+          if ! git diff --quiet --exit-code -- packages/datasets/data; then
+            echo "::error::Regenerating the seed dataset changed committed files."
+            echo "The generator changed. Run 'pnpm data:generate' and commit the result."
+            git diff --stat -- packages/datasets/data
+            exit 1
+          fi
+
+      # Scores the rules against the injected ground truth. This is the step
+      # that caught the two defects the schema checks missed, so it gates.
+      - name: Score the rule-based services
+        run: pnpm --filter @ewaste/datasets exec node --experimental-transform-types scripts/evaluate.ts
+
+      - name: Build recycler console
+        run: pnpm --filter @ewaste/recycler-web build
+
+  bundle:
+    name: Bundle the Android app
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Metro resolves @ewaste/shared as source across the workspace, which is
+      # exactly the thing most likely to break silently. Bundling proves it.
+      - name: Export Android bundle
+        working-directory: apps/collector
+        run: npx expo export --platform android --output-dir "$RUNNER_TEMP/export"
+
+      - name: Report bundle size
+        run: |
+          bundle=$(find "$RUNNER_TEMP/export" -name '*.hbc' | head -1)
+          size=$(du -h "$bundle" | cut -f1)
+          echo "Hermes bundle: $size"
+          echo "### Android bundle: $size" >> "$GITHUB_STEP_SUMMARY"

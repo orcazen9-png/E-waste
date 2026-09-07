@@ -1,7 +1,12 @@
 import { sha256Hex } from './hash.ts';
 
-/** Crockford base32 without I, L, O, U - safe to read aloud over a phone call. */
-const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+/**
+ * Crockford base32 without I, L, O, U - safe to read aloud over a phone call.
+ * Exported so a seeded generator can build references from the same alphabet
+ * and produce byte-identical output run to run.
+ */
+export const ID_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const ALPHABET = ID_ALPHABET;
 
 function randomBytes(n: number): Uint8Array {
   const out = new Uint8Array(n);

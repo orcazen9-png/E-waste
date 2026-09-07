@@ -424,6 +424,22 @@ describe('handover record', () => {
     assert.equal(parsed.weighedWeightKg, 12.2);
   });
 
+  it('accepts an injected reference so a seeded generator is reproducible', () => {
+    // The app never passes this; the dataset generator does, and without it
+    // regenerating the seed produced different bytes every run.
+    const a = createHandover(draft, 'device-secret', [], 'HO-ABCD-1234');
+    const b = createHandover(draft, 'device-secret', [], 'HO-ABCD-1234');
+    assert.equal(a.handoverRef, 'HO-ABCD-1234');
+    assert.equal(a.digest, b.digest);
+    assert.equal(a.verificationCode, b.verificationCode);
+    assert.equal(verifyHandover(a, 'device-secret').valid, true);
+  });
+
+  it('mints a different reference each time when none is supplied', () => {
+    const refs = new Set(Array.from({ length: 200 }, () => createHandover(draft, 's').handoverRef));
+    assert.equal(refs.size, 200);
+  });
+
   it('derives a stable verification code from the reference', () => {
     assert.equal(verificationCodeFor('HO-AAAA-BBBB', 's'), verificationCodeFor('HO-AAAA-BBBB', 's'));
     assert.notEqual(verificationCodeFor('HO-AAAA-BBBB', 's'), verificationCodeFor('HO-AAAA-BBBC', 's'));

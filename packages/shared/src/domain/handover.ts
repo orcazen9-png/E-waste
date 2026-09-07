@@ -42,12 +42,17 @@ export function canonicalPayload(draft: HandoverDraft, handoverRef: string): str
   ].join('|');
 }
 
+/**
+ * `handoverRef` is injectable so a seeded dataset generator can produce
+ * byte-identical output across runs. In the app it is always omitted, and a
+ * fresh random reference is minted on the device.
+ */
 export function createHandover(
   draft: HandoverDraft,
   deviceSecret: string,
   photoRefs: string[] = [],
+  handoverRef: string = newHandoverRef(),
 ): HandoverRecord {
-  const handoverRef = newHandoverRef();
   return {
     handoverRef,
     lotId: draft.lotId,

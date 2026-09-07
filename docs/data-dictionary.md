@@ -164,7 +164,7 @@ appearing in train and test. The validator fails the build if it ever does.
 
 - schema conformance for every row of every dataset (zod);
 - nine referential-integrity relationships;
-- all ~1,040 handover digests re-verified cryptographically;
+- every handover digest re-verified cryptographically;
 - price coverage across all 28 sub-categories, with thin district cells warned;
 - primary-key uniqueness;
 - no image hash in more than one split;
