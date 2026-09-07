@@ -121,6 +121,7 @@ export const hi: Record<TranslationKey, string> = {
   'handover.works_offline': 'यह पर्ची बिना इंटरनेट चलती है',
   'handover.invalid_digest': 'यह पर्ची बदली गई है। इसे न मानें।',
   'handover.invalid_code': 'कोड इस पर्ची से नहीं मिलता',
+  'handover.qr_mismatch': 'यह कोड सेव की गई पर्ची से नहीं मिलता। इसे न मानें।',
 
   'ledger.title': 'मेरे पैसे',
   'ledger.received': 'मिल गए',

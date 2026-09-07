@@ -131,6 +131,7 @@ export const en = {
   'handover.works_offline': 'This slip works without internet',
   'handover.invalid_digest': 'This slip has been changed. Do not accept it.',
   'handover.invalid_code': 'Code does not match this slip',
+  'handover.qr_mismatch': 'This code does not match the saved slip. Do not accept it.',
 
   /* Ledger */
   'ledger.title': 'My money',

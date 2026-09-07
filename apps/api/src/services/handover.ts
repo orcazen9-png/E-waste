@@ -21,6 +21,15 @@ import type { PriceService } from './prices.ts';
  * counter-signature. That ordering matters: if the server had to be reachable
  * to produce a slip, the whole thing would fail exactly where connectivity is
  * worst.
+ *
+ * What the recycler side can and cannot do offline is worth being precise
+ * about. The digest is an HMAC under the collector's device secret, so only
+ * the phone and the server can check it - a recycler console with no
+ * connectivity CANNOT cryptographically verify a slip. The QR is therefore a
+ * lookup token, not a self-proving credential: online, the server checks the
+ * digest and that the QR's claims match the stored record. Genuine offline
+ * verification on the recycler side needs asymmetric device keys with the
+ * public half distributed in advance; see docs/architecture.md.
  */
 export class HandoverService {
   private readonly detector = new RuleBasedAnomalyDetector();
@@ -64,10 +73,27 @@ export class HandoverService {
     const parsed = parseHandoverQr(payload);
     const record = await this.repo.getHandover(parsed.handoverRef);
     if (!record) return undefined;
+
     // The QR carries a digest prefix; a mismatch means the code was re-encoded.
     if (!record.digest.startsWith(parsed.digestPrefix)) {
       throw new HandoverError(409, 'handover.invalid_digest');
     }
+
+    // The QR also restates the facts of the transfer, and those claims are not
+    // covered by the prefix check - a re-encoded code keeping the same digest
+    // prefix but a different weight would otherwise pass. Nothing downstream
+    // reads the QR's copy of these fields, but a code whose claims disagree
+    // with the record is evidence of tampering and must not be quietly served.
+    const mismatched: string[] = [];
+    if (parsed.lotId !== record.lotId) mismatched.push('lotId');
+    if (parsed.collectorId !== record.collectorId) mismatched.push('collectorId');
+    if (parsed.recyclerId !== record.recyclerId) mismatched.push('recyclerId');
+    if (Math.abs(parsed.weighedWeightKg - record.weighedWeightKg) > 0.001) mismatched.push('weighedWeightKg');
+    if (parsed.createdAt !== record.createdAt) mismatched.push('createdAt');
+    if (mismatched.length > 0) {
+      throw new HandoverError(409, 'handover.qr_mismatch');
+    }
+
     const lot = await this.repo.getLot(record.lotId);
     if (!lot) throw new HandoverError(404, 'handover.unknown_lot');
     return { record, lot };

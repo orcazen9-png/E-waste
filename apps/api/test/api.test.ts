@@ -283,6 +283,18 @@ describe('handover, confirmation and traceability', () => {
     assert.equal(json(res).lot.lotId, lot.lotId);
   });
 
+  it('refuses a QR whose claims disagree with the stored slip', async () => {
+    const tampered = JSON.parse(qr) as Record<string, unknown>;
+    tampered['w'] = 60; // same digest prefix, different declared facts
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/handovers/lookup',
+      payload: { qr: JSON.stringify(tampered) },
+    });
+    assert.equal(res.statusCode, 409);
+    assert.equal(json(res).error, 'handover.qr_mismatch');
+  });
+
   it('falls back to the reference and 6-digit code when the QR will not scan', async () => {
     const ok = await app.inject({
       method: 'POST',

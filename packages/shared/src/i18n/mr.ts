@@ -122,6 +122,7 @@ export const mr: Record<TranslationKey, string> = {
   'handover.works_offline': 'ही पावती इंटरनेटशिवाय चालते',
   'handover.invalid_digest': 'ही पावती बदलली आहे. स्वीकारू नका.',
   'handover.invalid_code': 'कोड या पावतीशी जुळत नाही',
+  'handover.qr_mismatch': 'हा कोड जतन केलेल्या पावतीशी जुळत नाही. स्वीकारू नका.',
 
   'ledger.title': 'माझे पैसे',
   'ledger.received': 'मिळाले',
