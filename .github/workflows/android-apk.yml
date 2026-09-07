@@ -11,7 +11,7 @@ on:
 
 jobs:
   apk:
-    name: Build debug APK
+    name: Build release APK
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -50,14 +50,17 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('apps/collector/android/**/*.gradle*') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      # Debug rather than release: a release APK needs a signing key, and an
-      # unsigned release build will not install on a phone. Debug is signed
-      # with the standard debug key and installs fine for testing.
+      # Release, not debug. A debug APK does NOT contain the JS bundle - it
+      # fetches it from a Metro dev server at runtime, so installing one on a
+      # phone with no computer attached just shows "Could not connect to
+      # development server". Release embeds the bundle, and Expo's template
+      # signs release with the debug keystore, so it installs without a
+      # production signing key. (Do generate a real key before distributing.)
       - name: Build
         working-directory: apps/collector/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Name the artifact
         id: name
@@ -66,13 +69,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ewaste-collector-${{ steps.name.outputs.sha }}
-          path: apps/collector/android/app/build/outputs/apk/debug/*.apk
+          path: apps/collector/android/app/build/outputs/apk/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
       - name: Report size
         run: |
-          apk=$(find apps/collector/android/app/build/outputs/apk/debug -name '*.apk' | head -1)
+          apk=$(find apps/collector/android/app/build/outputs/apk/release -name '*.apk' | head -1)
           size=$(du -h "$apk" | cut -f1)
           echo "### APK built: $size" >> "$GITHUB_STEP_SUMMARY"
+          echo "Self-contained: the JS bundle is embedded, so it runs with no dev server." >> "$GITHUB_STEP_SUMMARY"
           echo "Download it from the Artifacts section of this run, open it on your phone and install." >> "$GITHUB_STEP_SUMMARY"
