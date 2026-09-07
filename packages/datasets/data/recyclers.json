@@ -1,0 +1,1168 @@
+[
+  {
+    "recyclerId": "REC_001",
+    "name": "[Demo] Sahyadri E-Waste Solutions",
+    "facilityType": "dismantler",
+    "place": {
+      "locality": "Bhosari",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 18.486481618070602,
+        "lon": 73.82617345626355
+      }
+    },
+    "materialsAccepted": [
+      "pcb",
+      "cable",
+      "motor_magnet"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0001",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-01-16",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919866118173",
+    "offeredRatesInr": {
+      "pcb:pcb_motherboard": 285.97,
+      "pcb:pcb_ram_gold": 1407.17,
+      "pcb:pcb_cpu_processor": 3767.59,
+      "pcb:pcb_mobile": 1044.03,
+      "pcb:pcb_tv_low_grade": 104.4,
+      "pcb:pcb_power_supply": 127.1,
+      "pcb:*": 1122.71,
+      "cable:cable_copper_house": 386.99,
+      "cable:cable_data_thin": 130.61,
+      "cable:cable_aluminium": 137.86,
+      "cable:cable_mixed_scrap": 188.66,
+      "cable:*": 211.03,
+      "motor_magnet:motor_hdd_assembly": 271.89,
+      "motor_magnet:motor_small_appliance": 135.94,
+      "motor_magnet:motor_speaker_magnet": 73.2,
+      "motor_magnet:motor_fan_ac": 156.86,
+      "motor_magnet:*": 159.47
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 30,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.9,
+    "ratingCount": 4,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_002",
+    "name": "[Demo] Deccan Green Recyclers - Kothrud",
+    "facilityType": "dismantler",
+    "place": {
+      "locality": "Kothrud",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 18.50604963646233,
+        "lon": 73.8437846728161
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel",
+      "cable",
+      "battery",
+      "motor_magnet"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0002",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-02-25",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919810802407",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 18.13,
+      "lcd_panel:lcd_monitor_panel": 20.72,
+      "lcd_panel:lcd_laptop_panel": 43.16,
+      "lcd_panel:led_backlight_strip": 82,
+      "lcd_panel:*": 41,
+      "cable:cable_copper_house": 381.13,
+      "cable:cable_data_thin": 128.63,
+      "cable:cable_aluminium": 135.78,
+      "cable:cable_mixed_scrap": 185.8,
+      "cable:*": 207.83,
+      "battery:battery_li_ion_mobile": 170.21,
+      "battery:battery_li_ion_laptop": 197.09,
+      "battery:battery_lead_acid_ups": 80.63,
+      "battery:battery_button_cell": 89.58,
+      "battery:*": 134.38,
+      "motor_magnet:motor_hdd_assembly": 264.04,
+      "motor_magnet:motor_small_appliance": 132.02,
+      "motor_magnet:motor_speaker_magnet": 71.09,
+      "motor_magnet:motor_fan_ac": 152.33,
+      "motor_magnet:*": 154.87
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 20,
+    "serviceAreaRadiusKm": 40,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 4.2,
+    "ratingCount": 22,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_003",
+    "name": "[Demo] Konkan Metals Recovery - Hadapsar",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Wagholi",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 18.591669234344362,
+        "lon": 73.92084231090993
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "pcb",
+      "battery",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0003",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-06-09",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919824863409",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.41,
+      "crt:crt_monitor": 7.89,
+      "crt:crt_yoke": 73.99,
+      "crt:*": 29.43,
+      "lcd_panel:lcd_tv_panel": 20.05,
+      "lcd_panel:lcd_monitor_panel": 22.91,
+      "lcd_panel:lcd_laptop_panel": 47.74,
+      "lcd_panel:led_backlight_strip": 90.7,
+      "lcd_panel:*": 45.35,
+      "pcb:pcb_motherboard": 322.78,
+      "pcb:pcb_ram_gold": 1588.29,
+      "pcb:pcb_cpu_processor": 4252.51,
+      "pcb:pcb_mobile": 1178.41,
+      "pcb:pcb_tv_low_grade": 117.84,
+      "pcb:pcb_power_supply": 143.46,
+      "pcb:*": 1267.21,
+      "battery:battery_li_ion_mobile": 204.42,
+      "battery:battery_li_ion_laptop": 236.7,
+      "battery:battery_lead_acid_ups": 96.83,
+      "battery:battery_button_cell": 107.59,
+      "battery:*": 161.39,
+      "motor_magnet:motor_hdd_assembly": 293.29,
+      "motor_magnet:motor_small_appliance": 146.65,
+      "motor_magnet:motor_speaker_magnet": 78.96,
+      "motor_magnet:motor_fan_ac": 169.21,
+      "motor_magnet:*": 172.03,
+      "mixed_plastic:plastic_abs_casing": 30.81,
+      "mixed_plastic:plastic_hips_tv": 23.11,
+      "mixed_plastic:plastic_mixed_dirty": 10.59,
+      "mixed_plastic:*": 21.51
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 20,
+    "serviceAreaRadiusKm": 15,
+    "paymentModes": [
+      "cash",
+      "upi",
+      "bank_transfer"
+    ],
+    "rating": 4.2,
+    "ratingCount": 42,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_004",
+    "name": "[Demo] Godavari E-Resource - Pimpri",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Wagholi",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 18.47728938193023,
+        "lon": 73.81790044373722
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "pcb",
+      "cable",
+      "battery",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0004",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-08-21",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919824242865",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.43,
+      "crt:crt_monitor": 7.92,
+      "crt:crt_yoke": 74.21,
+      "crt:*": 29.52,
+      "pcb:pcb_motherboard": 308.11,
+      "pcb:pcb_ram_gold": 1516.11,
+      "pcb:pcb_cpu_processor": 4059.27,
+      "pcb:pcb_mobile": 1124.86,
+      "pcb:pcb_tv_low_grade": 112.49,
+      "pcb:pcb_power_supply": 136.94,
+      "pcb:*": 1209.63,
+      "cable:cable_copper_house": 414.15,
+      "cable:cable_data_thin": 139.78,
+      "cable:cable_aluminium": 147.54,
+      "cable:cable_mixed_scrap": 201.9,
+      "cable:*": 225.84,
+      "battery:battery_li_ion_mobile": 177.64,
+      "battery:battery_li_ion_laptop": 205.69,
+      "battery:battery_lead_acid_ups": 84.15,
+      "battery:battery_button_cell": 93.5,
+      "battery:*": 140.24,
+      "mixed_plastic:plastic_abs_casing": 33.17,
+      "mixed_plastic:plastic_hips_tv": 24.88,
+      "mixed_plastic:plastic_mixed_dirty": 11.4,
+      "mixed_plastic:*": 23.15
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 20,
+    "serviceAreaRadiusKm": 40,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 3.6,
+    "ratingCount": 27,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_005",
+    "name": "[Demo] Vidarbha Circular Metals - Katraj",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Katraj",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 18.489540040129423,
+        "lon": 73.82892603611648
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "pcb",
+      "battery"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0005",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-05-16",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919839213225",
+    "offeredRatesInr": {
+      "crt:crt_tv": 5.67,
+      "crt:crt_monitor": 6.98,
+      "crt:crt_yoke": 65.44,
+      "crt:*": 26.03,
+      "pcb:pcb_motherboard": 353.17,
+      "pcb:pcb_ram_gold": 1737.84,
+      "pcb:pcb_cpu_processor": 4652.93,
+      "pcb:pcb_mobile": 1289.37,
+      "pcb:pcb_tv_low_grade": 128.94,
+      "pcb:pcb_power_supply": 156.97,
+      "pcb:*": 1386.54,
+      "battery:battery_li_ion_mobile": 188.15,
+      "battery:battery_li_ion_laptop": 217.86,
+      "battery:battery_lead_acid_ups": 89.12,
+      "battery:battery_button_cell": 99.03,
+      "battery:*": 148.54
+    },
+    "pickupAvailable": false,
+    "pickupMinWeightKg": 20,
+    "serviceAreaRadiusKm": 40,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 4.5,
+    "ratingCount": 21,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_006",
+    "name": "[Demo] Panchgani Urban Mining",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Kurla",
+      "district": "Mumbai Suburban",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.03367845774293,
+        "lon": 72.79777061196863
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0006",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-02-23",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919822875994",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 21.3,
+      "lcd_panel:lcd_monitor_panel": 24.34,
+      "lcd_panel:lcd_laptop_panel": 50.71,
+      "lcd_panel:led_backlight_strip": 96.35,
+      "lcd_panel:*": 48.18
+    },
+    "pickupAvailable": false,
+    "pickupMinWeightKg": 100,
+    "serviceAreaRadiusKm": 25,
+    "paymentModes": [
+      "cash"
+    ],
+    "ratingCount": 2,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_007",
+    "name": "[Demo] Sinhagad Recyclers - Kurla",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Andheri East",
+      "district": "Mumbai Suburban",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.195889419919254,
+        "lon": 72.94376047792733
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0007",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-01-08",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919860637742",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.93,
+      "crt:crt_monitor": 8.53,
+      "crt:crt_yoke": 80.01,
+      "crt:*": 31.83,
+      "lcd_panel:lcd_tv_panel": 21.05,
+      "lcd_panel:lcd_monitor_panel": 24.05,
+      "lcd_panel:lcd_laptop_panel": 50.11,
+      "lcd_panel:led_backlight_strip": 95.21,
+      "lcd_panel:*": 47.6,
+      "motor_magnet:motor_hdd_assembly": 306.93,
+      "motor_magnet:motor_small_appliance": 153.47,
+      "motor_magnet:motor_speaker_magnet": 82.64,
+      "motor_magnet:motor_fan_ac": 177.08,
+      "motor_magnet:*": 180.03,
+      "mixed_plastic:plastic_abs_casing": 41.84,
+      "mixed_plastic:plastic_hips_tv": 31.38,
+      "mixed_plastic:plastic_mixed_dirty": 14.38,
+      "mixed_plastic:*": 29.2
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 30,
+    "paymentModes": [
+      "cash",
+      "upi",
+      "bank_transfer"
+    ],
+    "ratingCount": 1,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_008",
+    "name": "[Demo] Arihant E-Scrap Processors - Malad",
+    "facilityType": "dismantler",
+    "place": {
+      "locality": "Andheri East",
+      "district": "Mumbai Suburban",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.13597666629255,
+        "lon": 72.88983899966328
+      }
+    },
+    "materialsAccepted": [
+      "pcb"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0008",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-06-15",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919863574355",
+    "offeredRatesInr": {
+      "pcb:pcb_motherboard": 300.35,
+      "pcb:pcb_ram_gold": 1477.91,
+      "pcb:pcb_cpu_processor": 3956.99,
+      "pcb:pcb_mobile": 1096.52,
+      "pcb:pcb_tv_low_grade": 109.65,
+      "pcb:pcb_power_supply": 133.49,
+      "pcb:*": 1179.15
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 100,
+    "serviceAreaRadiusKm": 15,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.6,
+    "ratingCount": 26,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_009",
+    "name": "[Demo] Mahalaxmi Resource Recovery - Govandi",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Andheri East",
+      "district": "Mumbai Suburban",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.16368840531111,
+        "lon": 72.91477956477999
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "pcb",
+      "cable",
+      "battery",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0009",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-11-05",
+    "authorizationStatus": "unverified",
+    "contactPhone": "+919844484139",
+    "offeredRatesInr": {
+      "crt:crt_tv": 7.87,
+      "crt:crt_monitor": 9.69,
+      "crt:crt_yoke": 90.8,
+      "crt:*": 36.12,
+      "lcd_panel:lcd_tv_panel": 24.3,
+      "lcd_panel:lcd_monitor_panel": 27.77,
+      "lcd_panel:lcd_laptop_panel": 57.85,
+      "lcd_panel:led_backlight_strip": 109.91,
+      "lcd_panel:*": 54.95,
+      "pcb:pcb_motherboard": 326.67,
+      "pcb:pcb_ram_gold": 1607.43,
+      "pcb:pcb_cpu_processor": 4303.76,
+      "pcb:pcb_mobile": 1192.61,
+      "pcb:pcb_tv_low_grade": 119.26,
+      "pcb:pcb_power_supply": 145.19,
+      "pcb:*": 1282.49,
+      "cable:cable_copper_house": 519.37,
+      "cable:cable_data_thin": 175.29,
+      "cable:cable_aluminium": 185.03,
+      "cable:cable_mixed_scrap": 253.2,
+      "cable:*": 283.22,
+      "battery:battery_li_ion_mobile": 243.2,
+      "battery:battery_li_ion_laptop": 281.6,
+      "battery:battery_lead_acid_ups": 115.2,
+      "battery:battery_button_cell": 128,
+      "battery:*": 192,
+      "motor_magnet:motor_hdd_assembly": 306.68,
+      "motor_magnet:motor_small_appliance": 153.34,
+      "motor_magnet:motor_speaker_magnet": 82.57,
+      "motor_magnet:motor_fan_ac": 176.93,
+      "motor_magnet:*": 179.88,
+      "mixed_plastic:plastic_abs_casing": 31.67,
+      "mixed_plastic:plastic_hips_tv": 23.75,
+      "mixed_plastic:plastic_mixed_dirty": 10.89,
+      "mixed_plastic:*": 22.1
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 30,
+    "serviceAreaRadiusKm": 40,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.3,
+    "ratingCount": 55,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_010",
+    "name": "[Demo] Bhima Valley Recyclers",
+    "facilityType": "collection_centre",
+    "place": {
+      "locality": "Wagle Estate",
+      "district": "Thane",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.083108686077594,
+        "lon": 72.85642781746984
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel",
+      "cable",
+      "battery",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0010",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-07-29",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919874470815",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 21.45,
+      "lcd_panel:lcd_monitor_panel": 24.52,
+      "lcd_panel:lcd_laptop_panel": 51.07,
+      "lcd_panel:led_backlight_strip": 97.04,
+      "lcd_panel:*": 48.52,
+      "cable:cable_copper_house": 401.77,
+      "cable:cable_data_thin": 135.6,
+      "cable:cable_aluminium": 143.13,
+      "cable:cable_mixed_scrap": 195.86,
+      "cable:*": 219.09,
+      "battery:battery_li_ion_mobile": 167.96,
+      "battery:battery_li_ion_laptop": 194.48,
+      "battery:battery_lead_acid_ups": 79.56,
+      "battery:battery_button_cell": 88.4,
+      "battery:*": 132.6,
+      "motor_magnet:motor_hdd_assembly": 318.32,
+      "motor_magnet:motor_small_appliance": 159.16,
+      "motor_magnet:motor_speaker_magnet": 85.7,
+      "motor_magnet:motor_fan_ac": 183.65,
+      "motor_magnet:*": 186.71,
+      "mixed_plastic:plastic_abs_casing": 31.19,
+      "mixed_plastic:plastic_hips_tv": 23.39,
+      "mixed_plastic:plastic_mixed_dirty": 10.72,
+      "mixed_plastic:*": 21.77
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 50,
+    "serviceAreaRadiusKm": 20,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 4.5,
+    "ratingCount": 46,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_011",
+    "name": "[Demo] Krishna E-Waste Works - Dombivli",
+    "facilityType": "dismantler",
+    "place": {
+      "locality": "Bhiwandi",
+      "district": "Thane",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.102753954026102,
+        "lon": 72.87410855862349
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "pcb",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0011",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-03-30",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919867207316",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.92,
+      "crt:crt_monitor": 8.51,
+      "crt:crt_yoke": 79.79,
+      "crt:*": 31.74,
+      "lcd_panel:lcd_tv_panel": 22.72,
+      "lcd_panel:lcd_monitor_panel": 25.97,
+      "lcd_panel:lcd_laptop_panel": 54.1,
+      "lcd_panel:led_backlight_strip": 102.79,
+      "lcd_panel:*": 51.4,
+      "pcb:pcb_motherboard": 326.01,
+      "pcb:pcb_ram_gold": 1604.17,
+      "pcb:pcb_cpu_processor": 4295.03,
+      "pcb:pcb_mobile": 1190.19,
+      "pcb:pcb_tv_low_grade": 119.02,
+      "pcb:pcb_power_supply": 144.89,
+      "pcb:*": 1279.88,
+      "motor_magnet:motor_hdd_assembly": 245.38,
+      "motor_magnet:motor_small_appliance": 122.69,
+      "motor_magnet:motor_speaker_magnet": 66.06,
+      "motor_magnet:motor_fan_ac": 141.56,
+      "motor_magnet:*": 143.92,
+      "mixed_plastic:plastic_abs_casing": 36.85,
+      "mixed_plastic:plastic_hips_tv": 27.64,
+      "mixed_plastic:plastic_mixed_dirty": 12.67,
+      "mixed_plastic:*": 25.72
+    },
+    "pickupAvailable": false,
+    "pickupMinWeightKg": 100,
+    "serviceAreaRadiusKm": 20,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 3.8,
+    "ratingCount": 13,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_012",
+    "name": "[Demo] Tapi Materials Recovery",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Panchavati",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.959777436479925,
+        "lon": 73.75584969283193
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel",
+      "cable",
+      "battery",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0012",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-07-05",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919873906137",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 21.56,
+      "lcd_panel:lcd_monitor_panel": 24.64,
+      "lcd_panel:lcd_laptop_panel": 51.33,
+      "lcd_panel:led_backlight_strip": 97.52,
+      "lcd_panel:*": 48.76,
+      "cable:cable_copper_house": 337.36,
+      "cable:cable_data_thin": 113.86,
+      "cable:cable_aluminium": 120.18,
+      "cable:cable_mixed_scrap": 164.46,
+      "cable:*": 183.97,
+      "battery:battery_li_ion_mobile": 150.12,
+      "battery:battery_li_ion_laptop": 173.82,
+      "battery:battery_lead_acid_ups": 71.11,
+      "battery:battery_button_cell": 79.01,
+      "battery:*": 118.52,
+      "mixed_plastic:plastic_abs_casing": 32.32,
+      "mixed_plastic:plastic_hips_tv": 24.24,
+      "mixed_plastic:plastic_mixed_dirty": 11.11,
+      "mixed_plastic:*": 22.56
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 50,
+    "serviceAreaRadiusKm": 25,
+    "paymentModes": [
+      "cash",
+      "upi",
+      "bank_transfer"
+    ],
+    "rating": 3.3,
+    "ratingCount": 10,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_013",
+    "name": "[Demo] Purandar Green Metals - Ambad",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Panchavati",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 20.144208687990904,
+        "lon": 73.92183781919181
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "pcb",
+      "cable",
+      "battery",
+      "motor_magnet"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0013",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-10-27",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919879305306",
+    "offeredRatesInr": {
+      "crt:crt_tv": 5.41,
+      "crt:crt_monitor": 6.66,
+      "crt:crt_yoke": 62.48,
+      "crt:*": 24.85,
+      "lcd_panel:lcd_tv_panel": 21.66,
+      "lcd_panel:lcd_monitor_panel": 24.75,
+      "lcd_panel:lcd_laptop_panel": 51.56,
+      "lcd_panel:led_backlight_strip": 97.96,
+      "lcd_panel:*": 48.98,
+      "pcb:pcb_motherboard": 299.45,
+      "pcb:pcb_ram_gold": 1473.48,
+      "pcb:pcb_cpu_processor": 3945.12,
+      "pcb:pcb_mobile": 1093.23,
+      "pcb:pcb_tv_low_grade": 109.32,
+      "pcb:pcb_power_supply": 133.09,
+      "pcb:*": 1175.61,
+      "cable:cable_copper_house": 414.98,
+      "cable:cable_data_thin": 140.06,
+      "cable:cable_aluminium": 147.84,
+      "cable:cable_mixed_scrap": 202.3,
+      "cable:*": 226.29,
+      "battery:battery_li_ion_mobile": 163.91,
+      "battery:battery_li_ion_laptop": 189.79,
+      "battery:battery_lead_acid_ups": 77.64,
+      "battery:battery_button_cell": 86.27,
+      "battery:*": 129.4,
+      "motor_magnet:motor_hdd_assembly": 262.22,
+      "motor_magnet:motor_small_appliance": 131.11,
+      "motor_magnet:motor_speaker_magnet": 70.6,
+      "motor_magnet:motor_fan_ac": 151.28,
+      "motor_magnet:*": 153.8
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 30,
+    "serviceAreaRadiusKm": 10,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.2,
+    "ratingCount": 37,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_014",
+    "name": "[Demo] Satpura Circular Resources",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Butibori",
+      "district": "Nagpur",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 21.207097198012473,
+        "lon": 79.14336747821122
+      }
+    },
+    "materialsAccepted": [
+      "battery",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0014",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-11-13",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919813434255",
+    "offeredRatesInr": {
+      "battery:battery_li_ion_mobile": 169.28,
+      "battery:battery_li_ion_laptop": 196.01,
+      "battery:battery_lead_acid_ups": 80.19,
+      "battery:battery_button_cell": 89.1,
+      "battery:*": 133.65,
+      "mixed_plastic:plastic_abs_casing": 31.61,
+      "mixed_plastic:plastic_hips_tv": 23.7,
+      "mixed_plastic:plastic_mixed_dirty": 10.86,
+      "mixed_plastic:*": 22.06
+    },
+    "pickupAvailable": false,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 10,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.2,
+    "ratingCount": 35,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_015",
+    "name": "[Demo] Warna Urban Mining - Kamptee",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Kamptee",
+      "district": "Nagpur",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 21.003333850222827,
+        "lon": 78.95998046520054
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel",
+      "motor_magnet"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0015",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2026-03-24",
+    "authorizationStatus": "expired",
+    "contactPhone": "+919822451260",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 21.99,
+      "lcd_panel:lcd_monitor_panel": 25.13,
+      "lcd_panel:lcd_laptop_panel": 52.35,
+      "lcd_panel:led_backlight_strip": 99.47,
+      "lcd_panel:*": 49.74,
+      "motor_magnet:motor_hdd_assembly": 250.15,
+      "motor_magnet:motor_small_appliance": 125.07,
+      "motor_magnet:motor_speaker_magnet": 67.35,
+      "motor_magnet:motor_fan_ac": 144.32,
+      "motor_magnet:*": 146.72
+    },
+    "pickupAvailable": false,
+    "pickupMinWeightKg": 30,
+    "serviceAreaRadiusKm": 30,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "ratingCount": 1,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_016",
+    "name": "[Demo] Indrayani E-Recyclers",
+    "facilityType": "collection_centre",
+    "place": {
+      "locality": "Chikalthana",
+      "district": "Chhatrapati Sambhajinagar",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.93828253748715,
+        "lon": 75.39917428373843
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "pcb",
+      "battery"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0016",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-08-29",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919812875573",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.08,
+      "crt:crt_monitor": 7.48,
+      "crt:crt_yoke": 70.13,
+      "crt:*": 27.9,
+      "pcb:pcb_motherboard": 277.03,
+      "pcb:pcb_ram_gold": 1363.17,
+      "pcb:pcb_cpu_processor": 3649.78,
+      "pcb:pcb_mobile": 1011.39,
+      "pcb:pcb_tv_low_grade": 101.14,
+      "pcb:pcb_power_supply": 123.13,
+      "pcb:*": 1087.61,
+      "battery:battery_li_ion_mobile": 181.17,
+      "battery:battery_li_ion_laptop": 209.78,
+      "battery:battery_lead_acid_ups": 85.82,
+      "battery:battery_button_cell": 95.35,
+      "battery:*": 143.03
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 100,
+    "serviceAreaRadiusKm": 20,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 3.5,
+    "ratingCount": 38,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_017",
+    "name": "[Demo] Melghat Materials - Chikalthana",
+    "facilityType": "aggregator",
+    "place": {
+      "locality": "Chikalthana",
+      "district": "Chhatrapati Sambhajinagar",
+      "state": "Maharashtra",
+      "point": {
+        "lat": 19.766629002344608,
+        "lon": 75.24468610211015
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "pcb",
+      "battery",
+      "motor_magnet",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/MA/EW/0017",
+    "authorizationIssuer": "Maharashtra PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-07-20",
+    "authorizationStatus": "unverified",
+    "contactPhone": "+919833044384",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6,
+      "crt:crt_monitor": 7.38,
+      "crt:crt_yoke": 69.18,
+      "crt:*": 27.52,
+      "lcd_panel:lcd_tv_panel": 17.39,
+      "lcd_panel:lcd_monitor_panel": 19.88,
+      "lcd_panel:lcd_laptop_panel": 41.41,
+      "lcd_panel:led_backlight_strip": 78.69,
+      "lcd_panel:*": 39.34,
+      "pcb:pcb_motherboard": 266.4,
+      "pcb:pcb_ram_gold": 1310.87,
+      "pcb:pcb_cpu_processor": 3509.76,
+      "pcb:pcb_mobile": 972.58,
+      "pcb:pcb_tv_low_grade": 97.26,
+      "pcb:pcb_power_supply": 118.4,
+      "pcb:*": 1045.88,
+      "battery:battery_li_ion_mobile": 158.98,
+      "battery:battery_li_ion_laptop": 184.08,
+      "battery:battery_lead_acid_ups": 75.31,
+      "battery:battery_button_cell": 83.67,
+      "battery:*": 125.51,
+      "motor_magnet:motor_hdd_assembly": 240.11,
+      "motor_magnet:motor_small_appliance": 120.06,
+      "motor_magnet:motor_speaker_magnet": 64.65,
+      "motor_magnet:motor_fan_ac": 138.53,
+      "motor_magnet:*": 140.83,
+      "mixed_plastic:plastic_abs_casing": 30.47,
+      "mixed_plastic:plastic_hips_tv": 22.85,
+      "mixed_plastic:plastic_mixed_dirty": 10.47,
+      "mixed_plastic:*": 21.27
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 10,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 3.9,
+    "ratingCount": 56,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_018",
+    "name": "[Demo] Ajanta Resource Systems",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Seelampur",
+      "district": "New Delhi",
+      "state": "Delhi",
+      "point": {
+        "lat": 28.70314322836101,
+        "lon": 77.28931890552491
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "cable",
+      "battery"
+    ],
+    "authorizationNumber": "SYN/DE/EW/0018",
+    "authorizationIssuer": "Delhi PCB (synthetic seed record)",
+    "authorizationValidTill": "2026-04-20",
+    "authorizationStatus": "expired",
+    "contactPhone": "+919823124596",
+    "offeredRatesInr": {
+      "crt:crt_tv": 7.11,
+      "crt:crt_monitor": 8.75,
+      "crt:crt_yoke": 82.05,
+      "crt:*": 32.64,
+      "cable:cable_copper_house": 365.07,
+      "cable:cable_data_thin": 123.21,
+      "cable:cable_aluminium": 130.06,
+      "cable:cable_mixed_scrap": 177.97,
+      "cable:*": 199.08,
+      "battery:battery_li_ion_mobile": 209.58,
+      "battery:battery_li_ion_laptop": 242.67,
+      "battery:battery_lead_acid_ups": 99.28,
+      "battery:battery_button_cell": 110.31,
+      "battery:*": 165.46
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 50,
+    "serviceAreaRadiusKm": 40,
+    "paymentModes": [
+      "cash"
+    ],
+    "rating": 4,
+    "ratingCount": 32,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_019",
+    "name": "[Demo] Yamuna E-Waste Collective - Seelampur",
+    "facilityType": "dismantler",
+    "place": {
+      "locality": "Mundka",
+      "district": "New Delhi",
+      "state": "Delhi",
+      "point": {
+        "lat": 28.5746101020962,
+        "lon": 77.17363909188659
+      }
+    },
+    "materialsAccepted": [
+      "lcd_panel",
+      "battery",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/DE/EW/0019",
+    "authorizationIssuer": "Delhi PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-06-22",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919883765952",
+    "offeredRatesInr": {
+      "lcd_panel:lcd_tv_panel": 21.05,
+      "lcd_panel:lcd_monitor_panel": 24.06,
+      "lcd_panel:lcd_laptop_panel": 50.13,
+      "lcd_panel:led_backlight_strip": 95.25,
+      "lcd_panel:*": 47.62,
+      "battery:battery_li_ion_mobile": 193.45,
+      "battery:battery_li_ion_laptop": 223.99,
+      "battery:battery_lead_acid_ups": 91.63,
+      "battery:battery_button_cell": 101.81,
+      "battery:*": 152.72,
+      "mixed_plastic:plastic_abs_casing": 39.14,
+      "mixed_plastic:plastic_hips_tv": 29.36,
+      "mixed_plastic:plastic_mixed_dirty": 13.46,
+      "mixed_plastic:*": 27.32
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 15,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.5,
+    "ratingCount": 51,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_020",
+    "name": "[Demo] Cauvery Circular Works",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Yelahanka",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "point": {
+        "lat": 13.029597338622809,
+        "lon": 77.64679760476052
+      }
+    },
+    "materialsAccepted": [
+      "crt",
+      "lcd_panel",
+      "cable",
+      "battery"
+    ],
+    "authorizationNumber": "SYN/KA/EW/0020",
+    "authorizationIssuer": "Karnataka PCB (synthetic seed record)",
+    "authorizationValidTill": "2028-08-08",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919822230639",
+    "offeredRatesInr": {
+      "crt:crt_tv": 6.59,
+      "crt:crt_monitor": 8.1,
+      "crt:crt_yoke": 75.98,
+      "crt:*": 30.22,
+      "lcd_panel:lcd_tv_panel": 22.64,
+      "lcd_panel:lcd_monitor_panel": 25.88,
+      "lcd_panel:lcd_laptop_panel": 53.91,
+      "lcd_panel:led_backlight_strip": 102.42,
+      "lcd_panel:*": 51.21,
+      "cable:cable_copper_house": 461.2,
+      "cable:cable_data_thin": 155.65,
+      "cable:cable_aluminium": 164.3,
+      "cable:cable_mixed_scrap": 224.83,
+      "cable:*": 251.5,
+      "battery:battery_li_ion_mobile": 164.57,
+      "battery:battery_li_ion_laptop": 190.56,
+      "battery:battery_lead_acid_ups": 77.96,
+      "battery:battery_button_cell": 86.62,
+      "battery:*": 129.93
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 30,
+    "serviceAreaRadiusKm": 10,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 4.4,
+    "ratingCount": 47,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "recyclerId": "REC_021",
+    "name": "[Demo] Nilgiri Metals Recovery - Bommanahalli",
+    "facilityType": "recycler",
+    "place": {
+      "locality": "Yelahanka",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "point": {
+        "lat": 12.939527776500583,
+        "lon": 77.56573499885053
+      }
+    },
+    "materialsAccepted": [
+      "pcb",
+      "cable",
+      "mixed_plastic"
+    ],
+    "authorizationNumber": "SYN/KA/EW/0021",
+    "authorizationIssuer": "Karnataka PCB (synthetic seed record)",
+    "authorizationValidTill": "2027-11-06",
+    "authorizationStatus": "authorized",
+    "contactPhone": "+919881475383",
+    "offeredRatesInr": {
+      "pcb:pcb_motherboard": 303.87,
+      "pcb:pcb_ram_gold": 1495.21,
+      "pcb:pcb_cpu_processor": 4003.31,
+      "pcb:pcb_mobile": 1109.35,
+      "pcb:pcb_tv_low_grade": 110.94,
+      "pcb:pcb_power_supply": 135.05,
+      "pcb:*": 1192.95,
+      "cable:cable_copper_house": 462.57,
+      "cable:cable_data_thin": 156.12,
+      "cable:cable_aluminium": 164.79,
+      "cable:cable_mixed_scrap": 225.5,
+      "cable:*": 252.25,
+      "mixed_plastic:plastic_abs_casing": 35.67,
+      "mixed_plastic:plastic_hips_tv": 26.75,
+      "mixed_plastic:plastic_mixed_dirty": 12.26,
+      "mixed_plastic:*": 24.9
+    },
+    "pickupAvailable": true,
+    "pickupMinWeightKg": 75,
+    "serviceAreaRadiusKm": 20,
+    "paymentModes": [
+      "cash",
+      "upi"
+    ],
+    "rating": 3.9,
+    "ratingCount": 50,
+    "updatedAt": "2026-09-01T00:00:00.000Z"
+  }
+]

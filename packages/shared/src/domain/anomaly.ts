@@ -1,7 +1,8 @@
-import type { GeoPoint, Transaction } from '../types.ts';
+import type { GeoPoint, MaterialCondition, Transaction } from '../types.ts';
 import { findSubCategory } from '../taxonomy.ts';
 import { haversineKm } from '../geo.ts';
-import { lookupStat, type PriceIndex } from './priceIndex.ts';
+import { type PriceIndex } from './priceIndex.ts';
+import { RuleBasedValuer, type Valuer } from './valuation.ts';
 
 /**
  * Abnormal-transaction detection. Two jobs:
@@ -27,6 +28,14 @@ export interface AnomalyFlag {
 
 export interface AnomalyContext {
   priceIndex: PriceIndex;
+  /**
+   * The valuer whose output the collector was shown. The fair-value baseline
+   * MUST come from the same valuer the app used, otherwise every legitimately
+   * discounted lot - broken, burnt, wet - reads as underpayment and the
+   * collector is warned about honest offers. Defaults to the rule-based
+   * valuer over `priceIndex`.
+   */
+  valuer?: Valuer;
   /** Photo hashes already seen, for duplicate detection. */
   knownPhotoHashes?: Set<string>;
   /** The collector's own recent transactions, for behavioural checks. */
@@ -40,6 +49,7 @@ export interface AnomalyInput {
     subCategoryId: string;
     approxWeightKg: number;
     quantity: number;
+    condition: MaterialCondition;
   }>;
   declaredWeightKg: number;
   weighedWeightKg?: number;
@@ -72,10 +82,19 @@ export class RuleBasedAnomalyDetector implements AnomalyDetector {
 
   private checkPrice(input: AnomalyInput, context: AnomalyContext): AnomalyFlag[] {
     const flags: AnomalyFlag[] = [];
-    const fair = input.items.reduce((sum, item) => {
-      const stat = lookupStat(context.priceIndex, item.subCategoryId, input.district);
-      return sum + (stat?.medianBuyingInr ?? 0) * item.approxWeightKg;
-    }, 0);
+    const valuer = context.valuer ?? new RuleBasedValuer(context.priceIndex);
+    const fair = input.items.reduce(
+      (sum, item) =>
+        sum +
+        valuer.estimate({
+          subCategoryId: item.subCategoryId,
+          weightKg: item.approxWeightKg,
+          quantity: item.quantity,
+          condition: item.condition,
+          district: input.district,
+        }).estimateInr,
+      0,
+    );
 
     const actual = input.finalPriceInr ?? input.quotedPriceInr;
     if (fair > 0 && actual !== undefined) {
