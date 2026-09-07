@@ -5,6 +5,7 @@ import type { Lot, RecyclerMatch } from '@ewaste/shared';
 
 import { AppProvider, useApp } from './src/state/AppContext.tsx';
 import { getMeta, listTransactions, setMeta } from './src/db/index.ts';
+import { summariseTransactions } from './src/lib/ledger.ts';
 import { colors } from './src/ui/theme.ts';
 import { Onboarding } from './src/screens/Onboarding.tsx';
 import { Home, type HomeDestination } from './src/screens/Home.tsx';
@@ -47,16 +48,11 @@ function Router() {
   // Home shows money; recompute whenever we land back on it.
   useEffect(() => {
     if (route.name !== 'home') return;
+    // Same summariser the ledger screen uses, so the two screens cannot
+    // disagree about what the collector is owed.
     void listTransactions().then((rows) => {
-      const weekAgo = Date.now() - 7 * 86_400_000;
-      setTotals({
-        pending: rows
-          .filter((r) => r.paymentStatus !== 'paid')
-          .reduce((s, r) => s + (r.paymentStatus === 'partial' ? r.finalPriceInr / 2 : r.finalPriceInr), 0),
-        week: rows
-          .filter((r) => r.paymentStatus === 'paid' && Date.parse(r.handoverAt) >= weekAgo)
-          .reduce((s, r) => s + r.finalPriceInr, 0),
-      });
+      const totals = summariseTransactions(rows);
+      setTotals({ pending: totals.pendingInr, week: totals.weekInr });
     });
   }, [route.name]);
 

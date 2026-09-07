@@ -26,7 +26,7 @@ pnpm api:dev      # http://localhost:3001  — no database needed
 pnpm web:dev      # http://localhost:5173  — recycler console
 pnpm app:start    # Expo; press 'a' for an Android device or emulator
 
-pnpm test         # 95 tests across shared, datasets and API
+pnpm test         # 104 tests across shared, datasets, API and collector
 pnpm data:validate   # 22 dataset checks
 ```
 
@@ -94,7 +94,8 @@ see it happen in their own ledger.
 
 **Verified here:**
 
-- 95 automated tests — 45 domain, 14 dataset, 36 API integration — all passing.
+- 104 automated tests — 45 domain, 14 dataset, 36 API integration, 9 collector
+  ledger — all passing.
 - 22 dataset validation checks, including cryptographic re-verification of all
   1,042 handover digests.
 - Rule scoring against injected ground truth: anomaly precision 0.982, recall

@@ -7,8 +7,10 @@
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "allowJs": true,
+    // Deliberately no "node": this is the app, and Node globals must not
+    // typecheck here or code that cannot run on a phone would compile.
     "types": ["react"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["App.tsx", "index.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "test"]
 }

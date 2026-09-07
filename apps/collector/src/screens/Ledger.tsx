@@ -5,6 +5,7 @@ import { Screen, Card, Muted } from '../ui/components.tsx';
 import { colors, radius, spacing, type } from '../ui/theme.ts';
 import { useApp } from '../state/AppContext.tsx';
 import { listTransactions, type LocalTransaction } from '../db/index.ts';
+import { summariseTransactions } from '../lib/ledger.ts';
 
 /**
  * The earnings ledger, read entirely from the local database.
@@ -22,27 +23,17 @@ export function Ledger({ onBack }: { onBack: () => void }) {
     void listTransactions().then(setRows);
   }, []);
 
-  const totals = useMemo(() => {
-    const paid = rows.filter((r) => r.paymentStatus === 'paid');
-    const weekAgo = Date.now() - 7 * 86_400_000;
-    return {
-      earned: paid.reduce((s, r) => s + r.finalPriceInr, 0),
-      week: paid.filter((r) => Date.parse(r.handoverAt) >= weekAgo).reduce((s, r) => s + r.finalPriceInr, 0),
-      pending: rows
-        .filter((r) => r.paymentStatus !== 'paid')
-        .reduce((s, r) => s + (r.paymentStatus === 'partial' ? r.finalPriceInr / 2 : r.finalPriceInr), 0),
-    };
-  }, [rows]);
+  const totals = useMemo(() => summariseTransactions(rows), [rows]);
 
   return (
     <Screen title={t('ledger.title')} onBack={onBack}>
       <View style={styles.summaryRow}>
-        <Summary label={t('ledger.this_week')} value={formatInr(totals.week)} />
-        <Summary label={t('ledger.pending')} value={formatInr(totals.pending)} tone={totals.pending > 0 ? 'warn' : undefined} />
+        <Summary label={t('ledger.this_week')} value={formatInr(totals.weekInr)} />
+        <Summary label={t('ledger.pending')} value={formatInr(totals.pendingInr)} tone={totals.pendingInr > 0 ? 'warn' : undefined} />
       </View>
       <Card>
         <Text style={[type.small, { color: colors.textMuted }]}>{t('ledger.total_earned')}</Text>
-        <Text style={styles.total}>{formatInr(totals.earned)}</Text>
+        <Text style={styles.total}>{formatInr(totals.earnedInr)}</Text>
       </Card>
 
       {rows.length === 0 && <Muted>{t('ledger.empty')}</Muted>}
