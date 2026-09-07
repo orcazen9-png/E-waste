@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+.DS_Store
+*.log
+apps/api/prisma/dev.db
+data/generated/
