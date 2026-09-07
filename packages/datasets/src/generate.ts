@@ -362,11 +362,11 @@ export function generateActivity(rng: Rng, options: ActivityOptions) {
   // against a median smeared across the whole year. Using a single index for
   // the full window makes every older transaction look mispriced.
   const monthlyIndexes = buildMonthlyIndexes(prices, endDate, days);
-  const indexFor = (at: Date) => {
-    const key = monthKey(at);
-    return monthlyIndexes.get(key) ?? monthlyIndexes.get(monthKey(endDate))!;
-  };
-  const priceIndex = monthlyIndexes.get(monthKey(endDate))!;
+  // Final fallback for any date outside the generated months, so a missing
+  // month degrades to a whole-window index rather than crashing.
+  const fallbackIndex = buildPriceIndex(prices, { now: endDate, windowDays: 90 });
+  const indexFor = (at: Date) => monthlyIndexes.get(monthKey(at)) ?? fallbackIndex;
+  const priceIndex = indexFor(endDate);
   const detector = new RuleBasedAnomalyDetector();
 
   // Photo hashes already committed to a transaction. The detector needs this
@@ -701,16 +701,30 @@ function monthKey(date: Date): string {
   return date.toISOString().slice(0, 7);
 }
 
-/** One 90-day-window price index per calendar month in the generated range. */
+/**
+ * One 90-day-window price index per calendar month in the generated range.
+ *
+ * Iteration walks month *boundaries*, not a fixed day-of-month offset. Stepping
+ * a mid-month cursor forward drops the final month whenever the window start
+ * falls later in the month than the end date does - which leaves lots
+ * collected in that month with no index at all.
+ */
 function buildMonthlyIndexes(prices: PricePoint[], endDate: Date, days: number) {
   const indexes = new Map<string, ReturnType<typeof buildPriceIndex>>();
-  const cursor = new Date(endDate);
-  cursor.setDate(cursor.getDate() - days);
-  while (cursor <= endDate) {
-    const monthEnd = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0, 23, 59, 59));
-    const at = monthEnd > endDate ? endDate : monthEnd;
-    indexes.set(monthKey(cursor), buildPriceIndex(prices, { now: at, windowDays: 90 }));
-    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  const start = new Date(endDate);
+  start.setUTCDate(start.getUTCDate() - days);
+
+  let year = start.getUTCFullYear();
+  let month = start.getUTCMonth();
+  while (Date.UTC(year, month, 1) <= endDate.getTime()) {
+    const monthEndMs = Date.UTC(year, month + 1, 0, 23, 59, 59);
+    const at = new Date(Math.min(monthEndMs, endDate.getTime()));
+    indexes.set(`${year}-${String(month + 1).padStart(2, '0')}`, buildPriceIndex(prices, { now: at, windowDays: 90 }));
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
   }
   return indexes;
 }

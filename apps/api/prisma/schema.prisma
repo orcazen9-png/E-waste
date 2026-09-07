@@ -1,0 +1,284 @@
+// Postgres schema. It mirrors packages/shared/src/types.ts one-to-one: the same
+// seven datasets the problem statement asks for, with the indexes the read
+// paths actually use (price board by district, matching by district+status,
+// ledger by collector, traceability by reference).
+//
+// Money is stored as Decimal, never Float. A rounding drift of a few paise per
+// transaction is a real dispute with a collector who counted the cash.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Collector {
+  collectorId           String   @id @map("collector_id")
+  phoneHash             String   @unique @map("phone_hash")
+  preferredLanguage     String   @map("preferred_language")
+  operatingDistrict     String   @map("operating_district")
+  operatingState        String   @map("operating_state")
+  createdAt             DateTime @default(now()) @map("created_at")
+  lifetimeEarningsInr   Decimal  @default(0) @map("lifetime_earnings_inr") @db.Decimal(12, 2)
+  pendingDuesInr        Decimal  @default(0) @map("pending_dues_inr") @db.Decimal(12, 2)
+  completedTransactions Int      @default(0) @map("completed_transactions")
+
+  lots         Lot[]
+  transactions Transaction[]
+  handovers    Handover[]
+  devices      Device[]
+
+  @@index([operatingDistrict])
+  @@map("collectors")
+}
+
+/// One phone. The device secret signs handover slips offline; only its hash is
+/// stored, so a database leak cannot forge a slip.
+model Device {
+  deviceId        String    @id @map("device_id")
+  collectorId     String    @map("collector_id")
+  deviceSecretHash String   @map("device_secret_hash")
+  platform        String    @default("android")
+  appVersion      String?   @map("app_version")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  collector Collector @relation(fields: [collectorId], references: [collectorId], onDelete: Cascade)
+
+  @@index([collectorId])
+  @@map("devices")
+}
+
+model Recycler {
+  recyclerId             String   @id @map("recycler_id")
+  name                   String
+  facilityType           String   @map("facility_type")
+  locality               String
+  district               String
+  state                  String
+  pincode                String?
+  lat                    Float?
+  lon                    Float?
+  materialsAccepted      String[] @map("materials_accepted")
+  authorizationNumber    String   @map("authorization_number")
+  authorizationIssuer    String   @map("authorization_issuer")
+  authorizationValidTill DateTime @map("authorization_valid_till") @db.Date
+  authorizationStatus    String   @map("authorization_status")
+  contactPhone           String   @map("contact_phone")
+  contactPersonName      String?  @map("contact_person_name")
+  offeredRatesInr        Json     @map("offered_rates_inr")
+  pickupAvailable        Boolean  @map("pickup_available")
+  pickupMinWeightKg      Float?   @map("pickup_min_weight_kg")
+  serviceAreaRadiusKm    Float    @map("service_area_radius_km")
+  paymentModes           String[] @map("payment_modes")
+  rating                 Float?
+  ratingCount            Int      @default(0) @map("rating_count")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  lots         Lot[]
+  transactions Transaction[]
+  handovers    Handover[]
+  prices       PricePoint[]
+
+  @@index([district, authorizationStatus])
+  @@map("recyclers")
+}
+
+model PricePoint {
+  priceId        String   @id @map("price_id")
+  categoryId     String   @map("category_id")
+  subCategoryId  String   @map("sub_category_id")
+  district       String
+  state          String
+  observedAt     DateTime @map("observed_at")
+  buyingPriceInr Decimal  @map("buying_price_inr") @db.Decimal(12, 2)
+  quotedPriceInr Decimal? @map("quoted_price_inr") @db.Decimal(12, 2)
+  unit           String
+  currency       String   @default("INR")
+  marketLowInr   Decimal  @map("market_low_inr") @db.Decimal(12, 2)
+  marketHighInr  Decimal  @map("market_high_inr") @db.Decimal(12, 2)
+  recyclerId     String?  @map("recycler_id")
+  source         String
+  confidence     Float
+
+  recycler Recycler? @relation(fields: [recyclerId], references: [recyclerId], onDelete: SetNull)
+
+  // The price board reads exactly this way: one sub-category, one district,
+  // most recent first.
+  @@index([subCategoryId, district, observedAt])
+  @@index([district, observedAt])
+  @@map("price_points")
+}
+
+model Lot {
+  lotId             String   @id @map("lot_id")
+  collectorId       String   @map("collector_id")
+  status            String
+  totalWeightKg     Float    @map("total_weight_kg")
+  estimatedValueInr Decimal  @map("estimated_value_inr") @db.Decimal(12, 2)
+  locality          String
+  district          String
+  state             String
+  lat               Float?
+  lon               Float?
+  collectedAt       DateTime @map("collected_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  recyclerId        String?  @map("recycler_id")
+  quotedPriceInr    Decimal? @map("quoted_price_inr") @db.Decimal(12, 2)
+  notes             String?
+
+  collector    Collector      @relation(fields: [collectorId], references: [collectorId], onDelete: Cascade)
+  recycler     Recycler?      @relation(fields: [recyclerId], references: [recyclerId], onDelete: SetNull)
+  items        MaterialItem[]
+  transactions Transaction[]
+  handovers    Handover[]
+
+  @@index([collectorId, status])
+  @@index([district, status])
+  @@map("lots")
+}
+
+model MaterialItem {
+  materialId           String   @id @map("material_id")
+  lotId                String   @map("lot_id")
+  categoryId           String   @map("category_id")
+  subCategoryId        String   @map("sub_category_id")
+  description          String   @default("")
+  imageRefs            String[] @map("image_refs")
+  approxWeightKg       Float    @map("approx_weight_kg")
+  unit                 String
+  quantity             Int      @default(1)
+  condition            String
+  sourceType           String   @map("source_type")
+  estimatedValueInr    Decimal  @map("estimated_value_inr") @db.Decimal(12, 2)
+  classificationSource String   @map("classification_source")
+  modelConfidence      Float?   @map("model_confidence")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  lot Lot @relation(fields: [lotId], references: [lotId], onDelete: Cascade)
+
+  @@index([lotId])
+  @@index([subCategoryId])
+  @@map("material_items")
+}
+
+model Transaction {
+  transactionId       String    @id @map("transaction_id")
+  lotId               String    @map("lot_id")
+  collectorId         String    @map("collector_id")
+  recyclerId          String    @map("recycler_id")
+  categorySummary     String[]  @map("category_summary")
+  totalWeightKg       Float     @map("total_weight_kg")
+  estimatedValueInr   Decimal   @map("estimated_value_inr") @db.Decimal(12, 2)
+  quotedPriceInr      Decimal   @map("quoted_price_inr") @db.Decimal(12, 2)
+  finalPriceInr       Decimal   @map("final_price_inr") @db.Decimal(12, 2)
+  collectionDistrict  String    @map("collection_district")
+  handoverDistrict    String    @map("handover_district")
+  handoverAt          DateTime  @map("handover_at")
+  paymentStatus       String    @map("payment_status")
+  paymentMode         String    @map("payment_mode")
+  paidAt              DateTime? @map("paid_at")
+  status              String
+  anomalyFlags        String[]  @map("anomaly_flags")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  lot       Lot       @relation(fields: [lotId], references: [lotId], onDelete: Cascade)
+  collector Collector @relation(fields: [collectorId], references: [collectorId], onDelete: Cascade)
+  recycler  Recycler  @relation(fields: [recyclerId], references: [recyclerId], onDelete: Restrict)
+
+  @@index([collectorId, handoverAt])
+  @@index([recyclerId, status])
+  @@map("transactions")
+}
+
+/// The traceability record. Immutable once confirmed: corrections are new rows,
+/// never edits, because this is the artefact a dispute is settled with.
+model Handover {
+  handoverRef        String    @id @map("handover_ref")
+  lotId              String    @map("lot_id")
+  collectorId        String    @map("collector_id")
+  recyclerId         String    @map("recycler_id")
+  transactionId      String?   @map("transaction_id")
+  verificationCode   String    @map("verification_code")
+  digest             String
+  photoRefs          String[]  @map("photo_refs")
+  photoHashes        String[]  @map("photo_hashes")
+  declaredWeightKg   Float     @map("declared_weight_kg")
+  weighedWeightKg    Float     @map("weighed_weight_kg")
+  lat                Float
+  lon                Float
+  locality           String
+  district           String
+  state              String
+  createdAt          DateTime  @map("created_at")
+  confirmedAt        DateTime? @map("confirmed_at")
+  confirmedBy        String?   @map("confirmed_by")
+  confirmationStatus String    @map("confirmation_status")
+  rejectionReason    String?   @map("rejection_reason")
+  downstreamStatus   String?   @map("downstream_status")
+  syncedAt           DateTime  @default(now()) @map("synced_at")
+
+  lot       Lot       @relation(fields: [lotId], references: [lotId], onDelete: Cascade)
+  collector Collector @relation(fields: [collectorId], references: [collectorId], onDelete: Cascade)
+  recycler  Recycler  @relation(fields: [recyclerId], references: [recyclerId], onDelete: Restrict)
+
+  @@unique([digest])
+  @@index([recyclerId, confirmationStatus])
+  @@index([lotId])
+  @@map("handovers")
+}
+
+/// Idempotency ledger for sync. A phone that retries after a dropped response
+/// must not create a second lot, so every change id is recorded exactly once.
+model SyncChange {
+  changeId    String   @id @map("change_id")
+  deviceId    String   @map("device_id")
+  collectorId String   @map("collector_id")
+  entity      String
+  entityId    String   @map("entity_id")
+  op          String
+  outcome     String
+  appliedAt   DateTime @default(now()) @map("applied_at")
+  serverSeq   BigInt   @default(autoincrement()) @map("server_seq")
+
+  @@index([collectorId, serverSeq])
+  @@map("sync_changes")
+}
+
+/// Append-only feed the phone pulls: what changed for this collector, in order.
+model ChangeFeed {
+  serverSeq   BigInt   @id @default(autoincrement()) @map("server_seq")
+  collectorId String   @map("collector_id")
+  entity      String
+  entityId    String   @map("entity_id")
+  op          String
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([collectorId, serverSeq])
+  @@map("change_feed")
+}
+
+model TrainingSample {
+  sampleId          String   @id @map("sample_id")
+  imageRef          String   @map("image_ref")
+  imageHash         String   @map("image_hash")
+  labelCategoryId   String   @map("label_category_id")
+  labelSubCategoryId String  @map("label_sub_category_id")
+  labelSource       String   @map("label_source")
+  weightKg          Float    @map("weight_kg")
+  district          String
+  observedPriceInr  Decimal  @map("observed_price_inr") @db.Decimal(12, 2)
+  finalPriceInr     Decimal? @map("final_price_inr") @db.Decimal(12, 2)
+  capturedAt        DateTime @map("captured_at")
+  split             String
+  synthetic         Boolean  @default(false)
+
+  @@index([split, labelSubCategoryId])
+  @@map("training_samples")
+}

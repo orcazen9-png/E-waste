@@ -1,0 +1,157 @@
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { z } from 'zod';
+import type { HandoverService } from '../services/handover.ts';
+import { HandoverError } from '../services/handover.ts';
+import type { Repository } from '../repository/types.ts';
+
+const recordBody = z.object({
+  deviceSecret: z.string().min(8),
+  record: z.object({
+    handoverRef: z.string().regex(/^HO-[0-9A-Z]{4}-[0-9A-Z]{4}$/),
+    lotId: z.string().min(1),
+    collectorId: z.string().min(1),
+    recyclerId: z.string().min(1),
+    verificationCode: z.string().regex(/^\d{6}$/),
+    digest: z.string().regex(/^[0-9a-f]{64}$/),
+    photoRefs: z.array(z.string()).default([]),
+    photoHashes: z.array(z.string()).default([]),
+    weighedWeightKg: z.number().positive(),
+    declaredWeightKg: z.number().positive(),
+    handoverPoint: z.object({ lat: z.number(), lon: z.number(), accuracyM: z.number().optional() }),
+    handoverPlace: z.object({
+      locality: z.string(),
+      district: z.string(),
+      state: z.string(),
+      point: z.object({ lat: z.number(), lon: z.number() }).optional(),
+    }),
+    createdAt: z.string().datetime(),
+    confirmationStatus: z.literal('pending').default('pending'),
+  }),
+});
+
+const lookupBody = z
+  .object({
+    qr: z.string().optional(),
+    handoverRef: z.string().optional(),
+    verificationCode: z.string().optional(),
+  })
+  .refine((b) => b.qr || (b.handoverRef && b.verificationCode), {
+    message: 'provide either qr, or handoverRef with verificationCode',
+  });
+
+const confirmBody = z.object({
+  recyclerId: z.string().min(1),
+  finalPriceInr: z.number().nonnegative(),
+  paymentMode: z.enum(['cash', 'upi', 'bank_transfer']),
+  paymentStatus: z.enum(['unpaid', 'partial', 'paid']),
+  weighedWeightKg: z.number().positive().optional(),
+});
+
+export async function handoverRoutes(
+  app: FastifyInstance,
+  handovers: HandoverService,
+  repo: Repository,
+): Promise<void> {
+  /** The phone uploads a slip it signed offline, possibly hours later. */
+  app.post('/v1/handovers', async (request, reply) => {
+    const parsed = recordBody.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
+    try {
+      const { record, flags } = await handovers.record(
+        parsed.data.record as Parameters<HandoverService['record']>[0],
+        parsed.data.deviceSecret,
+      );
+      return reply.code(201).send({ record, flags });
+    } catch (error) {
+      return sendHandoverError(reply, error);
+    }
+  });
+
+  /** Recycler console: scan the QR, or type the reference and 6-digit code. */
+  app.post('/v1/handovers/lookup', async (request, reply) => {
+    const parsed = lookupBody.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
+    try {
+      const found = parsed.data.qr
+        ? await handovers.lookupByQr(parsed.data.qr)
+        : await handovers.lookupByCode(parsed.data.handoverRef!, parsed.data.verificationCode!);
+      if (!found) return reply.code(404).send({ error: 'handover_not_found' });
+      return found;
+    } catch (error) {
+      return sendHandoverError(reply, error);
+    }
+  });
+
+  app.post<{ Params: { handoverRef: string } }>('/v1/handovers/:handoverRef/confirm', async (request, reply) => {
+    const parsed = confirmBody.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
+    try {
+      return await handovers.confirm({ handoverRef: request.params.handoverRef, ...parsed.data });
+    } catch (error) {
+      return sendHandoverError(reply, error);
+    }
+  });
+
+  app.post<{ Params: { handoverRef: string }; Body: { recyclerId?: string; reason?: string } }>(
+    '/v1/handovers/:handoverRef/reject',
+    async (request, reply) => {
+      const { recyclerId, reason } = request.body ?? {};
+      if (!recyclerId || !reason) return reply.code(400).send({ error: 'recyclerId and reason are required' });
+      try {
+        return await handovers.reject(request.params.handoverRef, recyclerId, reason);
+      } catch (error) {
+        return sendHandoverError(reply, error);
+      }
+    },
+  );
+
+  app.post<{ Params: { handoverRef: string }; Body: { recyclerId?: string; status?: string } }>(
+    '/v1/handovers/:handoverRef/downstream',
+    async (request, reply) => {
+      const { recyclerId, status } = request.body ?? {};
+      const allowed = ['received', 'sorted', 'processed', 'reported_to_epr'] as const;
+      if (!recyclerId || !status || !allowed.includes(status as (typeof allowed)[number])) {
+        return reply.code(400).send({ error: 'recyclerId and a valid status are required', allowed });
+      }
+      try {
+        return await handovers.setDownstreamStatus(
+          request.params.handoverRef,
+          recyclerId,
+          status as (typeof allowed)[number],
+        );
+      } catch (error) {
+        return sendHandoverError(reply, error);
+      }
+    },
+  );
+
+  app.get<{ Params: { handoverRef: string } }>('/v1/handovers/:handoverRef', async (request, reply) => {
+    const record = await repo.getHandover(request.params.handoverRef);
+    if (!record) return reply.code(404).send({ error: 'handover_not_found' });
+    const lot = await repo.getLot(record.lotId);
+    return { record, lot };
+  });
+
+  /** The recycler's inbox: slips waiting to be confirmed. */
+  app.get<{ Params: { recyclerId: string }; Querystring: { status?: string; limit?: string } }>(
+    '/v1/recyclers/:recyclerId/handovers',
+    async (request) => {
+      const status = request.query.status as 'pending' | 'confirmed' | 'rejected' | undefined;
+      const records = await repo.listHandovers({
+        recyclerId: request.params.recyclerId,
+        confirmationStatus: status,
+        limit: Math.min(Number(request.query.limit ?? 50), 200),
+      });
+      const lots = await Promise.all(records.map((r) => repo.getLot(r.lotId)));
+      return {
+        handovers: records.map((record, i) => ({ record, lot: lots[i] })),
+      };
+    },
+  );
+}
+
+/** Domain errors carry their own status and a translation key the app already knows. */
+function sendHandoverError(reply: FastifyReply, error: unknown): FastifyReply {
+  if (error instanceof HandoverError) return reply.code(error.statusCode).send({ error: error.code });
+  throw error;
+}

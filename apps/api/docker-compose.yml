@@ -1,0 +1,21 @@
+# Local Postgres for development. The API defaults to DATA_SOURCE=seed and
+# needs none of this; bring it up only when you want persistence.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ewaste
+      POSTGRES_PASSWORD: ewaste
+      POSTGRES_DB: ewaste
+    ports:
+      - "5432:5432"
+    volumes:
+      - ewaste-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ewaste"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ewaste-pgdata:

@@ -120,6 +120,12 @@ export interface PriceBoardEntry {
   asOf: ISODateTime;
   sampleSize: number;
   trend: PriceTrend;
+  /**
+   * Whether this row is built from observations in the requested district or
+   * from the national rollup. A national figure shown under a local heading is
+   * a lie a collector would act on, so the basis travels with the number.
+   */
+  basis: 'local_data' | 'national_data';
 }
 
 export interface PriceTrend {
