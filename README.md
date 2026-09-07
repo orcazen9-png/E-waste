@@ -26,7 +26,7 @@ pnpm api:dev      # http://localhost:3001  — no database needed
 pnpm web:dev      # http://localhost:5173  — recycler console
 pnpm app:start    # Expo; press 'a' for an Android device or emulator
 
-pnpm test         # 134 tests across shared, datasets, API and collector
+pnpm test         # 141 tests across shared, datasets, API and collector
 pnpm data:validate   # 22 dataset checks
 ```
 
@@ -98,8 +98,8 @@ which is an enumeration oracle over a list of people whose earnings these are.
 
 **Verified here:**
 
-- 134 automated tests — 57 domain, 14 dataset, 54 API integration, 9 collector
-  ledger — all passing.
+- 141 automated tests — 57 domain, 14 dataset, 54 API integration, 16 collector
+  (ledger maths and demo bundle) — all passing.
 - 22 dataset validation checks, including cryptographic re-verification of every
   handover digest.
 - Rule scoring against injected ground truth: anomaly precision 0.962, recall
@@ -115,7 +115,10 @@ which is an enumeration oracle over a list of people whose earnings these are.
 **Not verified:**
 
 - The collector app has not run on a device or emulator. Layouts, camera, GPS
-  and the text-to-speech fallback chain are unexercised.
+  and the text-to-speech fallback chain are unexercised. A debug APK is
+  buildable in CI (Actions → **Android APK**), and the app has a
+  **"Just try the app"** mode that runs entirely on bundled data, so it can be
+  tested on a phone with no server anywhere.
 - The Postgres adapter is typechecked and reviewed but not exercised by tests,
   which run without a database.
 - **No field research has been conducted.** `docs/field-research.md` is the

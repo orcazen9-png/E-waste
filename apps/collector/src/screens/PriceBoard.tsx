@@ -19,7 +19,7 @@ import { speak } from '../audio/tts.ts';
  * collector can walk into a negotiation already knowing the number.
  */
 export function PriceBoard({ onBack }: { onBack: () => void }) {
-  const { t, language, priceIndex, priceIndexFetchedAt, district } = useApp();
+  const { t, language, priceIndex, priceIndexFetchedAt, district, demoMode } = useApp();
 
   const rows = useMemo(() => {
     if (!priceIndex) return [];
@@ -43,9 +43,12 @@ export function PriceBoard({ onBack }: { onBack: () => void }) {
     );
   }, [priceIndex, district, t]);
 
-  const stale = priceIndexFetchedAt
-    ? Date.now() - Date.parse(priceIndexFetchedAt) > 3 * 86_400_000
-    : false;
+  // Bundled demo data is never "stale" in the sense the warning means, and
+  // showing both banners would just be noise.
+  const stale =
+    !demoMode && priceIndexFetchedAt
+      ? Date.now() - Date.parse(priceIndexFetchedAt) > 3 * 86_400_000
+      : false;
 
   return (
     <Screen title={t('price.board_title')} onBack={onBack}>
@@ -55,6 +58,13 @@ export function PriceBoard({ onBack }: { onBack: () => void }) {
           <Text style={[type.body, { textAlign: 'center', color: colors.textMuted }]}>
             {t('sync.offline')}
           </Text>
+        </View>
+      )}
+
+      {demoMode && (
+        <View style={styles.staleBanner}>
+          <Text style={{ fontSize: 20 }}>👀</Text>
+          <Text style={[type.small, { flex: 1, color: colors.warn }]}>{t('demo.prices_not_real')}</Text>
         </View>
       )}
 

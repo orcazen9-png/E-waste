@@ -19,7 +19,7 @@ export function Home({
   pendingDuesInr: number;
   earnedThisWeekInr: number;
 }) {
-  const { t, language, sync, syncNow } = useApp();
+  const { t, language, sync, syncNow, demoMode } = useApp();
 
   const tiles: Array<{ key: HomeDestination; glyph: string; label: string; tone?: 'primary' }> = [
     { key: 'newLot', glyph: '📷', label: t('home.new_lot'), tone: 'primary' },
@@ -34,6 +34,15 @@ export function Home({
         <Text style={[type.title, { flex: 1, color: colors.text }]}>{t('home.title')}</Text>
         <SpeakButton text={t('home.title')} language={language} />
       </View>
+
+      {/* Stated on the home screen, every time. A demo that looks identical
+          to the real thing is how someone ends up trusting a made-up price. */}
+      {demoMode && (
+        <View style={styles.demoBanner}>
+          <Text style={{ fontSize: 18 }}>👀</Text>
+          <Text style={styles.demoText}>{t('demo.banner')}</Text>
+        </View>
+      )}
 
       <Pressable style={styles.syncBar} onPress={() => void syncNow()} accessibilityRole="button">
         <Text style={styles.syncGlyph}>
@@ -102,6 +111,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
+  demoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.warnBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  demoText: { flex: 1, fontSize: 14, color: colors.warn, fontWeight: '600' },
   syncGlyph: { fontSize: 20 },
   syncText: { flex: 1, fontSize: 15, color: colors.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },

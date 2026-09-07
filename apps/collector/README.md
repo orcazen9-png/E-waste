@@ -62,11 +62,30 @@ not here. It lives in `@ewaste/shared` and is consumed as TypeScript source, so
 the phone, the recycler's browser and the server compute identical results and
 the logic is unit-tested once, off-device.
 
+## Trying it without a server
+
+Tap **"Just try the app"** on the sign-in screen. The price index, the
+authorised recycler list and a few settled sales are compiled into the APK, so
+every screen works with aeroplane mode on — photograph, categorise, weigh,
+value, match a buyer, generate a signed handover slip, read the ledger and the
+safety cards.
+
+It is not a mock: the same valuer, matcher and handover signing run on the same
+shapes of data. The only differences are where the reference data came from and
+that nothing is uploaded. The home screen and the price board say so on every
+visit, because a demo that looks identical to the real thing is how someone
+ends up trusting a made-up price.
+
+Regenerate the bundle with `pnpm data:demo` after changing the seed dataset.
+
 ## Verified
 
 - Typechecks under `strict` with `noUncheckedIndexedAccess`.
-- Bundles for Android: 761 modules, 2.46 MB Hermes bytecode
+- Bundles for Android: 765 modules, 2.53 MB Hermes bytecode
   (`npx expo export --platform android`).
+- 16 tests: the ledger maths, and the demo bundle (every material priced, only
+  authorised facilities, a buyer always findable, still marked synthetic).
+- A debug APK is buildable in CI — Actions → **Android APK** → Run workflow.
 
 Not verified: it has not been run on a device or emulator in this environment,
 so screen layouts, camera capture, GPS acquisition and the text-to-speech

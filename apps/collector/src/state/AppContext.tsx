@@ -20,6 +20,7 @@ import {
 } from '../db/index.ts';
 import { runSync, type SyncState } from '../sync/syncManager.ts';
 import { api, setAccessToken } from '../api/client.ts';
+import { DEMO_DISTRICT, seedDemoData } from '../demo/index.ts';
 
 /**
  * Application state.
@@ -46,6 +47,9 @@ interface AppState {
   syncNow: () => Promise<void>;
   /** True once a token exists. False means the app works offline-only. */
   signedIn: boolean;
+  /** Running on data bundled into the app, with nothing uploaded. */
+  demoMode: boolean;
+  enterDemoMode: () => Promise<void>;
   requestSignInCode: (phone: string) => Promise<{ challengeId: string; devCode?: string }>;
   completeSignIn: (input: { challengeId: string; code: string; phone: string }) => Promise<void>;
   signOut: () => Promise<void>;
@@ -67,6 +71,7 @@ const META = {
   onboarded: 'onboarded',
   accessToken: 'accessToken',
   tokenExpiresAt: 'tokenExpiresAt',
+  demoMode: 'demoMode',
 } as const;
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -81,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recyclers, setRecyclers] = useState<Recycler[]>([]);
   const [sync, setSync] = useState<SyncState>({ kind: 'idle', pending: 0 });
   const [signedIn, setSignedIn] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   const refreshLocalData = useCallback(async () => {
     const [index, recyclerList, pending] = await Promise.all([
@@ -117,6 +123,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSignedIn(true);
       }
 
+      if ((await getMeta(META.demoMode)) === '1') setDemoMode(true);
+
       const storedLanguage = (await getMeta(META.language)) as LanguageCode | undefined;
       const deviceLanguage = detectLanguage();
       const storedDistrict = (await getMeta(META.district)) ?? 'Pune';
@@ -133,12 +141,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshLocalData]);
 
   const syncNow = useCallback(async () => {
-    // With no token there is nothing to sync to; the app still works entirely
-    // offline, so this is a no-op rather than an error.
-    if (!collectorId || !signedIn) return;
+    // Demo mode never talks to a server, and with no token there is nothing to
+    // sync to. Both are no-ops rather than errors: the app works either way.
+    if (!collectorId || !signedIn || demoMode) return;
     await runSync({ collectorId, deviceId, deviceSecret, district, onState: setSync });
     await refreshLocalData();
-  }, [collectorId, signedIn, deviceId, deviceSecret, district, refreshLocalData]);
+  }, [collectorId, signedIn, demoMode, deviceId, deviceSecret, district, refreshLocalData]);
+
+  const enterDemoMode = useCallback(async () => {
+    await seedDemoData();
+    await setMeta(META.demoMode, '1');
+    await setMeta(META.district, DEMO_DISTRICT);
+    setDistrictState(DEMO_DISTRICT);
+    setDemoMode(true);
+    await refreshLocalData();
+  }, [refreshLocalData]);
 
   const requestSignInCode = useCallback(async (phone: string) => {
     const result = await api.requestCode(phone);
@@ -181,6 +198,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (sync.kind === 'signed_out') setSignedIn(false);
   }, [sync.kind]);
 
+
   // Sync on start and then on a slow timer. Fifteen minutes is deliberate: more
   // often wastes battery and data on a phone that may be charged once a day.
   useEffect(() => {
@@ -212,6 +230,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sync,
       syncNow,
       signedIn,
+      demoMode,
+      enterDemoMode,
       requestSignInCode,
       completeSignIn,
       signOut,
@@ -232,6 +252,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sync,
       syncNow,
       signedIn,
+      demoMode,
+      enterDemoMode,
       requestSignInCode,
       completeSignIn,
       signOut,

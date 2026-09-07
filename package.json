@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "description": "Offline-first, vernacular platform bridging informal e-waste collectors and authorized recyclers",
   "packageManager": "pnpm@10.33.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "pnpm -r --filter=!@ewaste/collector build",
     "typecheck": "pnpm -r typecheck",
@@ -14,7 +16,8 @@
     "data:validate": "pnpm --filter @ewaste/datasets validate",
     "api:dev": "pnpm --filter @ewaste/api dev",
     "web:dev": "pnpm --filter @ewaste/recycler-web dev",
-    "app:start": "pnpm --filter @ewaste/collector start"
+    "app:start": "pnpm --filter @ewaste/collector start",
+    "data:demo": "pnpm --filter @ewaste/datasets build-demo"
   },
   "devDependencies": {
     "typescript": "5.6.3"

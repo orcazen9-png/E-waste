@@ -280,7 +280,26 @@ export async function getHandoverForLot(lotId: string): Promise<HandoverRecord |
   };
 }
 
-export async function saveTransactions(transactions: Transaction[]): Promise<void> {
+/**
+ * Only the columns the phone keeps. Typed structurally so both a synced
+ * Transaction and a bundled demo row satisfy it without one pretending to be
+ * the other.
+ */
+export type TransactionRow = Pick<
+  Transaction,
+  | 'transactionId'
+  | 'lotId'
+  | 'recyclerId'
+  | 'totalWeightKg'
+  | 'finalPriceInr'
+  | 'handoverAt'
+  | 'paymentStatus'
+  | 'paymentMode'
+  | 'status'
+  | 'anomalyFlags'
+>;
+
+export async function saveTransactions(transactions: TransactionRow[]): Promise<void> {
   const db = await openDatabase();
   await db.withTransactionAsync(async () => {
     for (const t of transactions) {

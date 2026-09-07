@@ -9,7 +9,8 @@
     "generate": "node --experimental-transform-types scripts/generate.ts",
     "validate": "node --experimental-transform-types scripts/validate.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-transform-types --test \"test/**/*.test.ts\""
+    "test": "node --experimental-transform-types --test \"test/**/*.test.ts\"",
+    "build-demo": "node --experimental-transform-types scripts/build-demo-bundle.ts"
   },
   "dependencies": {
     "@ewaste/shared": "workspace:*",

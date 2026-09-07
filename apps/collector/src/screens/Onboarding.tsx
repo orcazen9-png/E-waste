@@ -25,7 +25,7 @@ import { OfflineError } from '../api/client.ts';
  * once, is the trade that keeps the rest of the app usable in a dead zone.
  */
 export function Onboarding({ onDone }: { onDone: () => void }) {
-  const { setLanguage, requestSignInCode, completeSignIn } = useApp();
+  const { setLanguage, requestSignInCode, completeSignIn, enterDemoMode } = useApp();
   const [language, setLocal] = useState<LanguageCode>();
   const [phone, setPhone] = useState('');
   const [challengeId, setChallengeId] = useState<string>();
@@ -131,6 +131,20 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
           <Text style={styles.note}>📶 {t('onboarding.needs_internet')}</Text>
           <Text style={styles.note}>{t('onboarding.no_id_needed')}</Text>
+
+          {/* Signing in is the one step that needs a network. Without this,
+              a phone with no signal - or a demo with no server - cannot get
+              past this screen at all. */}
+          <Pressable
+            style={({ pressed }) => [styles.demoBtn, pressed && { opacity: 0.8 }]}
+            onPress={async () => {
+              await enterDemoMode();
+              onDone();
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.demoText}>👀 {t('demo.try')}</Text>
+          </Pressable>
         </>
       ) : (
         <>
@@ -245,6 +259,15 @@ const styles = StyleSheet.create({
   ctaDisabled: { opacity: 0.4 },
   ctaText: { color: colors.primaryText, fontSize: 19, fontWeight: '700' },
   devCode: { textAlign: 'center', color: colors.warn, fontSize: 15, fontWeight: '700' },
+  demoBtn: {
+    minHeight: TOUCH_MIN,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  demoText: { fontSize: 17, fontWeight: '600', color: colors.text },
   error: {
     textAlign: 'center',
     color: colors.danger,
