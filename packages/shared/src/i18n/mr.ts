@@ -81,6 +81,7 @@ export const mr: Record<TranslationKey, string> = {
   'lot.estimate_range': '{low} ते {high} च्या दरम्यान',
   'lot.estimate_rough': 'हा फक्त अंदाज आहे',
   'lot.add_another': 'आणखी एक माल टाका',
+  'lot.how_many': 'किती नग?',
   'lot.finish': 'खरेदीदार शोधा',
   'lot.saved_offline': 'तुमच्या फोनमध्ये सेव्ह झाले',
 
@@ -111,6 +112,7 @@ export const mr: Record<TranslationKey, string> = {
   'match.excluded.too_far': 'खूप लांब आहे',
   'match.excluded.material_not_accepted': 'ते हा माल घेत नाहीत',
   'match.no_results': 'जवळ परवाना असलेला खरेदीदार सापडला नाही. जास्त अंतर बघा.',
+  'match.excluded_count': '{count} खरेदीदार दाखवले नाहीत',
 
   'handover.title': 'माल दिल्याची पावती',
   'handover.show_to_buyer': 'हे खरेदीदाराला दाखवा',
@@ -136,6 +138,7 @@ export const mr: Record<TranslationKey, string> = {
   'ledger.cash': 'रोख',
   'ledger.upi': 'यूपीआय',
   'ledger.bank_transfer': 'बँक',
+  'ledger.empty': 'अजून विक्री नाही',
 
   'valuation.reason.local': '{1} मधील {0} अलीकडच्या विक्रीवरून',
   'valuation.reason.national': 'इतर ठिकाणच्या {0} विक्रीवरून',

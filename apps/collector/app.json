@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "E-Waste Collector",
+    "slug": "ewaste-collector",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "in.ewaste.collector",
+      "versionCode": 1,
+      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermissionText": "The app uses the camera only to photograph the material you collect." }],
+      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "Location is recorded only when you hand over material, so the record can be proved later." }]
+    ],
+    "extra": {
+      "apiUrl": "http://10.0.2.2:3001"
+    }
+  }
+}

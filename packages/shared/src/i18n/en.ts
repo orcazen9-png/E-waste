@@ -87,6 +87,7 @@ export const en = {
   'lot.estimate_range': 'Between {low} and {high}',
   'lot.estimate_rough': 'This is a rough guess',
   'lot.add_another': 'Add one more material',
+  'lot.how_many': 'How many pieces?',
   'lot.finish': 'Find a buyer',
   'lot.saved_offline': 'Saved on your phone',
 
@@ -119,6 +120,7 @@ export const en = {
   'match.excluded.too_far': 'Too far away',
   'match.excluded.material_not_accepted': 'They do not take this material',
   'match.no_results': 'No authorised buyer found nearby. Try a bigger distance.',
+  'match.excluded_count': '{count} buyer(s) not shown',
 
   /* Handover */
   'handover.title': 'Handover slip',
@@ -146,6 +148,7 @@ export const en = {
   'ledger.cash': 'Cash',
   'ledger.upi': 'UPI',
   'ledger.bank_transfer': 'Bank',
+  'ledger.empty': 'No sales yet',
 
   /* Valuation reasons */
   'valuation.reason.local': 'Based on {0} recent sales in {1}',
