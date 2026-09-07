@@ -14,6 +14,9 @@ and there is no CORS setup in development.
 
 ## Screens
 
+- **Sign in** — choose your facility; a six-digit code goes to the contact
+  number on its authorisation record. The page never shows that number, and a
+  facility whose authorisation has lapsed cannot sign in.
 - **Verify a slip** — paste scanned QR contents, or type the reference and the
   six-digit code the collector reads aloud. Shows what the collector declared
   next to what the scale says, with the difference spelled out, then settles:
@@ -46,8 +49,9 @@ in Marathi. Two people disputing a slip should be reading the same sentence.
 
 ## Not implemented
 
-- **No sign-in.** The facility picker is a demo affordance; anyone with the page
-  can act as any facility. The banner at the top says so.
+- **No SMS provider**, so in development the code is displayed on the sign-in
+  screen with a banner saying so. The console also warns whenever the server
+  reports `authDevMode`.
 - **No camera scanning.** QR contents are pasted. Adding a scanner is a small
   change (`BarcodeDetector` where available, a WASM decoder otherwise) but it
   needs a device to test on.

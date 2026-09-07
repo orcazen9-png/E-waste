@@ -38,6 +38,9 @@ a database — but the production story is still Postgres.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| POST | `/v1/auth/collector/request` \| `verify` | Phone-OTP sign-in for collectors |
+| POST | `/v1/auth/recycler/request` \| `verify` | Facility sign-in, code to the registered number |
+| GET | `/v1/auth/me` | Identity behind the current token |
 | GET | `/health` | Liveness, and which data source is active |
 | GET | `/v1/reference/taxonomy` | Pictorial category tree |
 | GET | `/v1/reference/safety` | Safety cards |
@@ -45,12 +48,12 @@ a database — but the production story is still Postgres.
 | GET | `/v1/prices/board?district=&lang=` | Price board, with spoken text per row |
 | GET | `/v1/prices/trend?subCategoryId=&district=` | Trend, labelled local or national |
 | GET | `/v1/prices/index?district=` | Offline price index the phone caches |
-| GET | `/v1/recyclers?district=` | Authorised facilities (unauthorised require `authorizedOnly=false`) |
+| GET | `/v1/recyclers?district=` | Authorised facilities. Anonymous callers get a directory without rate cards or contact numbers |
 | POST | `/v1/lots` | Create a lot and value it; idempotent on `lotId` |
 | GET | `/v1/lots/:lotId/matches` | Ranked authorised buyers, with reasons |
 | POST | `/v1/handovers` | Record a slip signed offline on the phone |
 | POST | `/v1/handovers/lookup` | Recycler scans the QR, or types reference + code |
-| POST | `/v1/handovers/:ref/confirm` | Counter-sign, create the transaction, pay |
+| POST | `/v1/handovers/:ref/confirm` | Counter-sign, create the transaction, pay. Facility identity comes from the token |
 | POST | `/v1/handovers/:ref/reject` | Refuse a slip, with a reason |
 | POST | `/v1/handovers/:ref/downstream` | Track material after receipt, to EPR reporting |
 | GET | `/v1/recyclers/:id/handovers` | Recycler inbox |
@@ -84,12 +87,18 @@ observations the national rollup is used, and the response says so
 (`basis: 'national_data'`). A national median shown under a local heading is a
 number a collector would act on.
 
+**Identity comes from the token, never the request body.** `confirm` used to
+take the recycler id from the body, which meant anyone could settle anyone's
+handover. Authentication is also checked *before* body validation, so an
+anonymous caller cannot probe request schemas from validation errors. See
+`docs/security.md`.
+
 ## Not implemented
 
-- **Authentication.** There is no OTP flow, session or token; endpoints trust
-  the ids in the request. This is a prototype boundary, not an oversight — do
-  not expose it publicly. The intended design is phone-OTP onboarding issuing a
-  device-scoped token, with the device secret that signs handover slips derived
-  on-device and never transmitted.
-- **Rate limiting, audit logging, media storage.** Photo uploads currently pass
-  by reference and hash only.
+- **SMS delivery.** Sign-in works, but `AUTH_DEV_MODE` returns the code in the
+  response because no provider is wired up. With it off, the request fails
+  loudly rather than pretending to send.
+- **Account recovery.** Losing the number loses the account.
+- **Audit logging and per-IP rate limiting.** Sign-in is rate limited per
+  number only.
+- **Media storage.** Photos pass by reference and hash only.

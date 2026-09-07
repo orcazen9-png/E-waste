@@ -19,6 +19,7 @@ import {
   setMeta,
 } from '../db/index.ts';
 import { runSync, type SyncState } from '../sync/syncManager.ts';
+import { api, setAccessToken } from '../api/client.ts';
 
 /**
  * Application state.
@@ -43,6 +44,11 @@ interface AppState {
   recyclers: Recycler[];
   sync: SyncState;
   syncNow: () => Promise<void>;
+  /** True once a token exists. False means the app works offline-only. */
+  signedIn: boolean;
+  requestSignInCode: (phone: string) => Promise<{ challengeId: string; devCode?: string }>;
+  completeSignIn: (input: { challengeId: string; code: string; phone: string }) => Promise<void>;
+  signOut: () => Promise<void>;
   /** Translate a key in the current language. */
   t: (key: TranslationKey, values?: Record<string, string | number>) => string;
   /** Expand a coded reason emitted by the domain services. */
@@ -59,6 +65,8 @@ const META = {
   deviceSecret: 'deviceSecret',
   district: 'district',
   onboarded: 'onboarded',
+  accessToken: 'accessToken',
+  tokenExpiresAt: 'tokenExpiresAt',
 } as const;
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -72,6 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [priceIndexFetchedAt, setPriceIndexFetchedAt] = useState<string>();
   const [recyclers, setRecyclers] = useState<Recycler[]>([]);
   const [sync, setSync] = useState<SyncState>({ kind: 'idle', pending: 0 });
+  const [signedIn, setSignedIn] = useState(false);
 
   const refreshLocalData = useCallback(async () => {
     const [index, recyclerList, pending] = await Promise.all([
@@ -99,6 +108,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await setMeta(META.deviceId, storedDevice);
       await setMeta(META.deviceSecret, storedSecret);
 
+      // Restore the session. An expired token is treated as absent rather
+      // than left to 401 every background sync.
+      const storedToken = await getMeta(META.accessToken);
+      const tokenExpiresAt = await getMeta(META.tokenExpiresAt);
+      if (storedToken && (!tokenExpiresAt || Date.parse(tokenExpiresAt) > Date.now())) {
+        setAccessToken(storedToken);
+        setSignedIn(true);
+      }
+
       const storedLanguage = (await getMeta(META.language)) as LanguageCode | undefined;
       const deviceLanguage = detectLanguage();
       const storedDistrict = (await getMeta(META.district)) ?? 'Pune';
@@ -115,10 +133,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshLocalData]);
 
   const syncNow = useCallback(async () => {
-    if (!collectorId) return;
+    // With no token there is nothing to sync to; the app still works entirely
+    // offline, so this is a no-op rather than an error.
+    if (!collectorId || !signedIn) return;
     await runSync({ collectorId, deviceId, deviceSecret, district, onState: setSync });
     await refreshLocalData();
-  }, [collectorId, deviceId, deviceSecret, district, refreshLocalData]);
+  }, [collectorId, signedIn, deviceId, deviceSecret, district, refreshLocalData]);
+
+  const requestSignInCode = useCallback(async (phone: string) => {
+    const result = await api.requestCode(phone);
+    return { challengeId: result.challengeId, devCode: result.devCode };
+  }, []);
+
+  const completeSignIn = useCallback(
+    async (input: { challengeId: string; code: string; phone: string }) => {
+      const result = await api.verifyCode({
+        ...input,
+        deviceId,
+        preferredLanguage: language,
+        district,
+        state: 'Maharashtra',
+        platform: 'android',
+      });
+
+      // The server is authoritative for the collector id, so adopt the one it
+      // returns. A phone signing in again gets its existing history back.
+      await setMeta(META.collectorId, result.collector.collectorId);
+      await setMeta(META.accessToken, result.token);
+      await setMeta(META.tokenExpiresAt, result.expiresAt);
+      setCollectorId(result.collector.collectorId);
+      setAccessToken(result.token);
+      setSignedIn(true);
+    },
+    [deviceId, language, district],
+  );
+
+  const signOut = useCallback(async () => {
+    await setMeta(META.accessToken, '');
+    await setMeta(META.tokenExpiresAt, '');
+    setAccessToken(undefined);
+    setSignedIn(false);
+  }, []);
+
+  // A rejected token must flip the UI back to signed-out, or the app quietly
+  // stops syncing and the collector never finds out.
+  useEffect(() => {
+    if (sync.kind === 'signed_out') setSignedIn(false);
+  }, [sync.kind]);
 
   // Sync on start and then on a slow timer. Fifteen minutes is deliberate: more
   // often wastes battery and data on a phone that may be charged once a day.
@@ -150,6 +211,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recyclers,
       sync,
       syncNow,
+      signedIn,
+      requestSignInCode,
+      completeSignIn,
+      signOut,
       t: (key, values) => translate(language, key, values),
       tc: (coded) => translateCoded(language, coded),
       refreshLocalData,
@@ -166,6 +231,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recyclers,
       sync,
       syncNow,
+      signedIn,
+      requestSignInCode,
+      completeSignIn,
+      signOut,
       refreshLocalData,
     ],
   );

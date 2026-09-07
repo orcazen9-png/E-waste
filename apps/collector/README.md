@@ -18,7 +18,12 @@ each option aloud when touched, so choosing a language never depends on already
 understanding the app's language. Confidence is words — "this is a rough guess"
 — never a number, because `0.32` means nothing at a weighing scale.
 
-**Nothing waits on the network.** Photograph, categorise, weigh, value, match a
+**Sign-in is the only step that needs connectivity**, and the screen says so.
+Putting the network dependency there, once, is what keeps everything after it
+usable in a dead zone. A rejected token returns to that screen; nothing queued
+is discarded, so it costs a sign-in, never a day's work.
+
+**Nothing else waits on the network.** Photograph, categorise, weigh, value, match a
 buyer, generate and sign a handover slip: all of it runs against local SQLite
 and a cached price index. Sync is a background job with exponential backoff.
 Every request has an 8-second timeout and every caller carries on without it —
@@ -79,9 +84,12 @@ after the first field test, not before.
 
 ## Not implemented
 
-- **No OTP or account recovery.** Identity is generated on-device on first run.
-  Losing the phone loses the earnings history, which is a real problem for the
-  people this is for and needs solving before any pilot.
+- **No account recovery.** Sign-in is phone plus a six-digit code, and the
+  server is authoritative for the collector id, so signing in again on a new
+  phone restores the history. But losing the *number* loses the account, which
+  is a real problem for the people this is for and needs solving before a
+  pilot.
+- **No SMS provider**, so in development the code is shown on screen.
 - **No photo upload.** Photos stay on the device; only their hashes travel, so
   the traceability record proves a photo existed and was not swapped, but
   nobody downstream can look at it yet.

@@ -32,15 +32,38 @@ export class OfflineError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T> {
+/** The server rejected our token. The app must sign in again before syncing. */
+export class UnauthorizedError extends Error {
+  constructor() {
+    super('unauthorized');
+  }
+}
+
+/*
+ * The token is held in module state rather than read from SQLite on every
+ * call: sync runs in a background loop and an extra database round trip per
+ * request is wasted battery.
+ */
+let accessToken: string | undefined;
+
+export function setAccessToken(token: string | undefined): void {
+  accessToken = token;
+}
+
+async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number; anonymous?: boolean }): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), init?.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   try {
     const response = await fetch(`${baseUrl()}${path}`, {
       ...init,
       signal: controller.signal,
-      headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+      headers: {
+        'content-type': 'application/json',
+        ...(accessToken && !init?.anonymous ? { authorization: `Bearer ${accessToken}` } : {}),
+        ...(init?.headers ?? {}),
+      },
     });
+    if (response.status === 401) throw new UnauthorizedError();
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `http_${response.status}`);
@@ -57,6 +80,29 @@ async function request<T>(path: string, init?: RequestInit & { timeoutMs?: numbe
 }
 
 export const api = {
+  /* Sign-in. These two are the only calls made without a token. */
+  requestCode: (phone: string) =>
+    request<{ challengeId: string; expiresAt: string; devCode?: string }>('/v1/auth/collector/request', {
+      method: 'POST',
+      anonymous: true,
+      body: JSON.stringify({ phone }),
+    }),
+
+  verifyCode: (body: {
+    challengeId: string;
+    code: string;
+    phone: string;
+    deviceId: string;
+    preferredLanguage?: string;
+    district?: string;
+    state?: string;
+    platform?: string;
+  }) =>
+    request<{ token: string; expiresAt: string; collector: { collectorId: string } }>(
+      '/v1/auth/collector/verify',
+      { method: 'POST', anonymous: true, body: JSON.stringify(body) },
+    ),
+
   priceIndex: (district: string) =>
     request<PriceIndex>(`/v1/prices/index?district=${encodeURIComponent(district)}`),
 

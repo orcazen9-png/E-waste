@@ -143,12 +143,10 @@ decaying like a scraped rate board.
 
 These are prototype boundaries, stated plainly rather than buried:
 
-- **No authentication anywhere.** The API trusts the ids in the request; the
-  recycler console has no sign-in. Do not expose either publicly. The intended
-  design is phone-OTP onboarding issuing a device-scoped token.
+- **No SMS provider.** Phone-OTP sign-in is implemented (see
+  `docs/security.md`), but codes are only deliverable in development mode.
+- **No account recovery.** Losing the phone number loses the account.
 - **No offline verification for recyclers** (above).
 - **No media storage.** Photos stay on the phone; only hashes travel.
-- **On-device-only identity with no recovery.** Losing the phone loses the
-  earnings history. For people whose financial record this is meant to become,
-  that must be solved before a pilot.
-- **No rate limiting or audit log.**
+- **No audit log** of who read what. Sign-in is rate limited per number, but
+  there is no per-IP limiting.

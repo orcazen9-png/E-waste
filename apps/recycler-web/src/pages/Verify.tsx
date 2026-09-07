@@ -144,7 +144,6 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
     try {
       setResult(
         await api.confirm(record.handoverRef, {
-          recyclerId,
           finalPriceInr: Number(price),
           paymentMode,
           paymentStatus,
@@ -274,7 +273,7 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
                 if (!reason) return;
                 setBusy(true);
                 try {
-                  await api.reject(record.handoverRef, recyclerId, reason);
+                  await api.reject(record.handoverRef, reason);
                   setError('Slip rejected. The collector will see the reason on their phone.');
                 } catch (e) {
                   setError(e instanceof ApiError ? describe(e) : 'Could not reach the server.');
@@ -295,18 +294,16 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
         </div>
       )}
 
-      {result && <ConfirmationResult result={result} recyclerId={recyclerId} record={record} />}
+      {result && <ConfirmationResult result={result} record={record} />}
     </div>
   );
 }
 
 function ConfirmationResult({
   result,
-  recyclerId,
   record,
 }: {
   result: Awaited<ReturnType<typeof api.confirm>>;
-  recyclerId: string;
   record: HandoverRecord;
 }) {
   const [downstream, setDownstream] = useState(result.handover.downstreamStatus ?? 'received');
@@ -347,7 +344,7 @@ function ConfirmationResult({
         <button
           className="secondary"
           onClick={async () => {
-            await api.setDownstream(record.handoverRef, recyclerId, downstream);
+            await api.setDownstream(record.handoverRef, downstream);
             setSaved(true);
           }}
         >

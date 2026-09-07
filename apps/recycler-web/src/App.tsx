@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Recycler } from '@ewaste/shared';
-import { api } from './lib/api.ts';
+import { api, clearSession, loadSession, setUnauthorizedHandler, type Session } from './lib/api.ts';
+import { SignIn } from './pages/SignIn.tsx';
 import { Inbox } from './pages/Inbox.tsx';
 import { Verify } from './pages/Verify.tsx';
 import { Transactions } from './pages/Transactions.tsx';
@@ -8,62 +9,60 @@ import { Rates } from './pages/Rates.tsx';
 
 type Tab = 'verify' | 'inbox' | 'transactions' | 'rates';
 
-const STORAGE_KEY = 'ewaste.recyclerId';
-
 export function App() {
-  const [recyclers, setRecyclers] = useState<Recycler[] | null>(null);
-  const [recyclerId, setRecyclerId] = useState<string>(() => localStorage.getItem(STORAGE_KEY) ?? '');
+  const [session, setSession] = useState<Session | undefined>(() => loadSession());
+  const [recycler, setRecycler] = useState<Recycler | null>(null);
   const [tab, setTab] = useState<Tab>('verify');
-  const [health, setHealth] = useState<{ dataSource: string } | null>(null);
+  const [health, setHealth] = useState<{ dataSource: string; authDevMode: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.health().then(setHealth).catch(() => setHealth(null));
-    api
-      .listRecyclers()
-      .then((r) => {
-        setRecyclers(r.recyclers);
-        setRecyclerId((current) => current || (r.recyclers[0]?.recyclerId ?? ''));
-      })
-      .catch(() => setError('Could not reach the API. Start it with `pnpm api:dev`.'));
+  // A rejected token drops straight back to sign-in rather than leaving the
+  // console showing stale data it can no longer refresh.
+  const signOut = useCallback(() => {
+    clearSession();
+    setSession(undefined);
+    setRecycler(null);
   }, []);
 
   useEffect(() => {
-    if (recyclerId) localStorage.setItem(STORAGE_KEY, recyclerId);
-  }, [recyclerId]);
+    setUnauthorizedHandler(signOut);
+  }, [signOut]);
 
-  const recycler = recyclers?.find((r) => r.recyclerId === recyclerId);
+  useEffect(() => {
+    api.health().then(setHealth).catch(() => setHealth(null));
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    setError(null);
+    api
+      .getRecycler(session.recyclerId)
+      .then(setRecycler)
+      .catch(() => setError('Could not load this facility.'));
+  }, [session]);
+
+  if (!session) return <SignIn onSignedIn={setSession} />;
 
   return (
     <div className="app">
       <header className="top">
-        <h1>Recycler console</h1>
-        {recyclers && (
-          <select
-            aria-label="Facility"
-            value={recyclerId}
-            onChange={(e) => setRecyclerId(e.target.value)}
-            style={{ maxWidth: 340 }}
-          >
-            {recyclers.map((r) => (
-              <option key={r.recyclerId} value={r.recyclerId}>
-                {r.name} — {r.place.district}
-              </option>
-            ))}
-          </select>
-        )}
+        <h1>{recycler?.name ?? 'Recycler console'}</h1>
         <span className="env">
           {health ? `API up · ${health.dataSource}` : 'API unreachable'}
         </span>
+        <button className="secondary" style={{ minHeight: 38, padding: '6px 14px' }} onClick={signOut}>
+          Sign out
+        </button>
       </header>
 
       {error && <div className="banner danger">{error}</div>}
 
-      {/* There is no sign-in yet, so this cannot be mistaken for a real console. */}
-      <div className="banner warn small">
-        Prototype: no sign-in. Anyone with this page can act as any facility, and all facility
-        records shown are synthetic demo data.
-      </div>
+      {health?.authDevMode && (
+        <div className="banner warn small">
+          Development mode: the server returns one-time codes in API responses. Never enable this in
+          production.
+        </div>
+      )}
 
       <nav className="tabs">
         {(
@@ -80,12 +79,11 @@ export function App() {
         ))}
       </nav>
 
-      {!recyclerId && !error && <div className="empty">Loading facilities…</div>}
-
-      {recyclerId && tab === 'verify' && <Verify recyclerId={recyclerId} />}
-      {recyclerId && tab === 'inbox' && <Inbox recyclerId={recyclerId} />}
-      {recyclerId && tab === 'transactions' && <Transactions recyclerId={recyclerId} />}
-      {recycler && tab === 'rates' && <Rates recycler={recycler} />}
+      {tab === 'verify' && <Verify recyclerId={session.recyclerId} />}
+      {tab === 'inbox' && <Inbox recyclerId={session.recyclerId} />}
+      {tab === 'transactions' && <Transactions recyclerId={session.recyclerId} />}
+      {tab === 'rates' && recycler && <Rates recycler={recycler} />}
+      {tab === 'rates' && !recycler && <div className="empty">Loading facility…</div>}
     </div>
   );
 }

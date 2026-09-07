@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { SyncService } from '../services/sync.ts';
+import { requireKind, requireSelf } from '../plugins/auth.ts';
 
 const pushBody = z.object({
   deviceId: z.string().min(1),
@@ -31,14 +32,20 @@ const pullBody = z.object({
 
 export async function syncRoutes(app: FastifyInstance, sync: SyncService): Promise<void> {
   app.post('/v1/sync/push', async (request, reply) => {
+    // Authenticate before parsing: an anonymous caller should not be able to
+    // probe the request schema by watching validation errors come back.
+    if (!requireKind(request, reply, 'collector')) return reply;
     const parsed = pushBody.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
+    if (!requireSelf(request, reply, 'collector', parsed.data.collectorId)) return reply;
     return sync.push(parsed.data as Parameters<SyncService['push']>[0]);
   });
 
   app.post('/v1/sync/pull', async (request, reply) => {
+    if (!requireKind(request, reply, 'collector')) return reply;
     const parsed = pullBody.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
+    if (!requireSelf(request, reply, 'collector', parsed.data.collectorId)) return reply;
     return sync.pull(parsed.data);
   });
 }

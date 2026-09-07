@@ -26,7 +26,7 @@ pnpm api:dev      # http://localhost:3001  — no database needed
 pnpm web:dev      # http://localhost:5173  — recycler console
 pnpm app:start    # Expo; press 'a' for an Android device or emulator
 
-pnpm test         # 106 tests across shared, datasets, API and collector
+pnpm test         # 134 tests across shared, datasets, API and collector
 pnpm data:validate   # 22 dataset checks
 ```
 
@@ -90,11 +90,15 @@ see it happen in their own ledger.
 
 **Cash is first-class.** No screen requires a UPI ID or a bank account.
 
+**Identity comes from the token, never the request body.** A collector asking
+for someone else's record gets 404, not 403 — a 403 confirms the id exists,
+which is an enumeration oracle over a list of people whose earnings these are.
+
 ## Verified, and not
 
 **Verified here:**
 
-- 106 automated tests — 47 domain, 14 dataset, 36 API integration, 9 collector
+- 134 automated tests — 57 domain, 14 dataset, 54 API integration, 9 collector
   ledger — all passing.
 - 22 dataset validation checks, including cryptographic re-verification of every
   handover digest.
@@ -103,7 +107,8 @@ see it happen in their own ledger.
   regression fails CI. **A regression baseline on synthetic data, not field
   accuracy.**
 - The API booted and driven over HTTP; the recycler console driven end-to-end
-  in a real browser, including refusal of a tampered handover QR.
+  in a real browser, including sign-in, refusal of a wrong code, session
+  persistence across reload, sign-out, and refusal of a tampered handover QR.
 - The collector app typechecks under `strict` and bundles for Android
   (761 modules, 2.46 MB Hermes bytecode).
 
@@ -119,8 +124,12 @@ see it happen in their own ledger.
 
 ## Honest limitations
 
-- **No authentication anywhere.** The API trusts the ids it is given; the
-  recycler console has no sign-in. Do not deploy either publicly.
+- **No SMS provider is wired up.** Sign-in works, but in development the
+  one-time code comes back in the API response; with `AUTH_DEV_MODE` off the
+  request fails loudly rather than pretending to send anything.
+- **No account recovery.** Losing the phone number loses the account. For a
+  record meant to become someone's financial history, this must be solved
+  before a pilot.
 - **All seed data is synthetic.** Facilities are prefixed `[Demo]` and their
   authorisation numbers `SYN/`. Replace `recyclers.json` from SPCB/CPCB
   authorisation lists before any pilot.
@@ -128,9 +137,6 @@ see it happen in their own ledger.
   `docs/ai-ml.md` for what collecting them honestly requires.
 - **A recycler cannot verify a slip offline.** The digest is symmetric, so the
   QR is a lookup token rather than a self-proving credential.
-- **Identity is on-device with no recovery.** Losing the phone loses the
-  earnings history — unacceptable for a record meant to become someone's
-  financial history, and it must be solved before a pilot.
 - **~25–40 MB release APK** is realistic for entry-level Android but is not
   "small" by the standard the brief sets.
 
@@ -143,6 +149,7 @@ see it happen in their own ledger.
 | [`docs/offline-sync.md`](docs/offline-sync.md) | Local storage, outbox, conflicts, idempotency, degradation |
 | [`docs/ai-ml.md`](docs/ai-ml.md) | The four interfaces, why rules ship first, the label loop, bias |
 | [`docs/unit-economics.md`](docs/unit-economics.md) | Parametric model, sensitivity, what breaks it, what to measure |
+| [`docs/security.md`](docs/security.md) | Sign-in, tokens, rate limits, authorisation rules, gaps |
 | [`docs/field-research.md`](docs/field-research.md) | Protocol, consent, questions, usability scoring |
 | [`packages/datasets/README.md`](packages/datasets/README.md) | Dataset card: generation, validation, scoring, limitations |
 
@@ -150,7 +157,7 @@ see it happen in their own ledger.
 
 1. Field research with 2–4 collectors and an aggregator — settle the margin
    assumption before building anything else.
-2. Phone-OTP authentication and device-scoped tokens.
+2. Wire an SMS provider, and design account recovery.
 3. Photo upload and storage, so traceability evidence is viewable downstream.
 4. Run the app on real devices; fix what the usability sessions surface.
 5. Replace synthetic recyclers with a real authorisation list for one district.

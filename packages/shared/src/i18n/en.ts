@@ -219,6 +219,21 @@ export const en = {
   'onboarding.phone_why': 'Only to pay you and show your record. We do not share it.',
   'onboarding.district_prompt': 'Where do you mostly work?',
   'onboarding.no_id_needed': 'No ID card needed',
+  'onboarding.needs_internet': 'This one step needs internet',
+  'onboarding.send_code': 'Send me a code',
+  'onboarding.enter_code': 'Type the 6 numbers we sent you',
+  'onboarding.code_sent': 'Code sent to your phone',
+  'onboarding.change_number': 'Use a different number',
+  'onboarding.dev_code': 'Test code: {code}',
+  'auth.invalid_phone': 'That does not look like a mobile number',
+  'auth.invalid_code': 'That code is not right. Try again.',
+  'auth.code_expired': 'That code has expired. Ask for a new one.',
+  'auth.code_already_used': 'That code was already used. Ask for a new one.',
+  'auth.too_many_attempts': 'Too many wrong tries. Ask for a new code.',
+  'auth.too_many_requests': 'Too many codes asked for. Wait a few minutes.',
+  'auth.sms_not_configured': 'Codes cannot be sent right now. Try later.',
+  'auth.no_internet': 'No internet. Connect and try again.',
+  'auth.signed_out': 'Please sign in again to send your work',
 } as const;
 
 export type TranslationKey = keyof typeof en;

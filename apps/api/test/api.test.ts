@@ -23,9 +23,56 @@ before(async () => {
     repository: new MemoryRepository(dataset),
     config: { dataSource: 'seed', logLevel: 'silent' },
   });
+  alice = await signInCollector('9876543210', 'DEV_ALICE');
+  bob = await signInCollector('9876500001', 'DEV_BOB');
 });
 
 const json = (res: { payload: string }) => JSON.parse(res.payload);
+
+const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
+
+/**
+ * Signs in the way a real client does: request a code, read it back (dev mode
+ * returns it in the response since no SMS provider is wired up), verify.
+ */
+async function signInCollector(phone: string, deviceId: string) {
+  const requested = json(
+    await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } }),
+  );
+  const verified = json(
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/collector/verify',
+      payload: {
+        challengeId: requested.challengeId,
+        code: requested.devCode,
+        phone,
+        deviceId,
+        district: 'Pune',
+        state: 'Maharashtra',
+      },
+    }),
+  );
+  return { token: verified.token as string, collectorId: verified.collector.collectorId as string };
+}
+
+async function signInRecycler(recyclerId: string) {
+  const requested = json(
+    await app.inject({ method: 'POST', url: '/v1/auth/recycler/request', payload: { recyclerId } }),
+  );
+  const verified = json(
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/recycler/verify',
+      payload: { challengeId: requested.challengeId, code: requested.devCode },
+    }),
+  );
+  return verified.token as string;
+}
+
+/** Two collector identities, created once and reused across the suite. */
+let alice: { token: string; collectorId: string };
+let bob: { token: string; collectorId: string };
 
 describe('health and reference data', () => {
   it('reports which data source it is running on', async () => {
@@ -127,10 +174,8 @@ describe('recyclers', () => {
 });
 
 describe('lot creation and matching', () => {
-  const collectorId = dataset.collectors[0]!.collectorId;
-
-  const draft = {
-    collectorId,
+  const draft = () => ({
+    collectorId: alice.collectorId,
     collectionPlace: {
       locality: 'Kothrud',
       district: 'Pune',
@@ -141,10 +186,15 @@ describe('lot creation and matching', () => {
       { categoryId: 'cable', subCategoryId: 'cable_copper_house', approxWeightKg: 12, condition: 'intact' },
       { categoryId: 'pcb', subCategoryId: 'pcb_motherboard', approxWeightKg: 3, quantity: 4, condition: 'intact' },
     ],
-  };
+  });
 
   it('creates a lot and values it', async () => {
-    const res = await app.inject({ method: 'POST', url: '/v1/lots', payload: { ...draft, lotId: 'LOT_TEST_A' } });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/lots',
+      headers: bearer(alice.token),
+      payload: { ...draft(), lotId: 'LOT_TEST_A' },
+    });
     assert.equal(res.statusCode, 201);
     const lot = json(res) as Lot;
     assert.equal(lot.totalWeightKg, 15);
@@ -154,22 +204,33 @@ describe('lot creation and matching', () => {
   });
 
   it('is idempotent for a lot the phone created offline', async () => {
-    const again = await app.inject({ method: 'POST', url: '/v1/lots', payload: { ...draft, lotId: 'LOT_TEST_A' } });
+    const again = await app.inject({
+      method: 'POST',
+      url: '/v1/lots',
+      headers: bearer(alice.token),
+      payload: { ...draft(), lotId: 'LOT_TEST_A' },
+    });
     assert.equal(again.statusCode, 200, 'a resent lot must not create a duplicate');
     assert.equal((json(again) as Lot).lotId, 'LOT_TEST_A');
   });
 
   it('rejects an unknown sub-category', async () => {
+    const base = draft();
     const res = await app.inject({
       method: 'POST',
       url: '/v1/lots',
-      payload: { ...draft, items: [{ ...draft.items[0], subCategoryId: 'not_a_real_material' }] },
+      headers: bearer(alice.token),
+      payload: { ...base, items: [{ ...base.items[0], subCategoryId: 'not_a_real_material' }] },
     });
     assert.equal(res.statusCode, 400);
   });
 
   it('ranks authorised buyers and explains the ranking', async () => {
-    const res = await app.inject({ method: 'GET', url: '/v1/lots/LOT_TEST_A/matches?limit=5' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/lots/LOT_TEST_A/matches?limit=5',
+      headers: bearer(alice.token),
+    });
     assert.equal(res.statusCode, 200);
     const body = json(res);
     assert.ok(body.matches.length > 0, 'expected at least one nearby buyer');
@@ -186,15 +247,19 @@ describe('lot creation and matching', () => {
   });
 
   it('404s when matching a lot that does not exist', async () => {
-    const res = await app.inject({ method: 'GET', url: '/v1/lots/LOT_NOPE/matches' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/lots/LOT_NOPE/matches',
+      headers: bearer(alice.token),
+    });
     assert.equal(res.statusCode, 404);
   });
 });
 
 describe('handover, confirmation and traceability', () => {
-  const collectorId = dataset.collectors[1]!.collectorId;
   let lot: Lot;
   let recyclerId: string;
+  let recyclerAuth: string;
   let handoverRef: string;
   let verificationCode: string;
   let qr: string;
@@ -203,9 +268,10 @@ describe('handover, confirmation and traceability', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/lots',
+      headers: bearer(bob.token),
       payload: {
         lotId: 'LOT_TEST_B',
-        collectorId,
+        collectorId: bob.collectorId,
         collectionPlace: {
           locality: 'Bhosari',
           district: 'Pune',
@@ -220,15 +286,22 @@ describe('handover, confirmation and traceability', () => {
     lot = json(res) as Lot;
     assert.equal(res.statusCode, 201);
 
-    const matches = json(await app.inject({ method: 'GET', url: '/v1/lots/LOT_TEST_B/matches' }));
+    const matches = json(
+      await app.inject({
+        method: 'GET',
+        url: '/v1/lots/LOT_TEST_B/matches',
+        headers: bearer(bob.token),
+      }),
+    );
     recyclerId = matches.matches[0].recycler.recyclerId;
+    recyclerAuth = await signInRecycler(recyclerId);
   });
 
   it('accepts a slip the phone signed offline', async () => {
     const record = createHandover(
       {
         lotId: lot.lotId,
-        collectorId,
+        collectorId: bob.collectorId,
         recyclerId,
         declaredWeightKg: 20,
         weighedWeightKg: 19.6,
@@ -246,6 +319,7 @@ describe('handover, confirmation and traceability', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/handovers',
+      headers: bearer(bob.token),
       payload: { deviceSecret: DEVICE_SECRET, record },
     });
     assert.equal(res.statusCode, 201);
@@ -256,7 +330,7 @@ describe('handover, confirmation and traceability', () => {
     const record = createHandover(
       {
         lotId: lot.lotId,
-        collectorId,
+        collectorId: bob.collectorId,
         recyclerId,
         declaredWeightKg: 20,
         weighedWeightKg: 19.6,
@@ -270,6 +344,7 @@ describe('handover, confirmation and traceability', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/handovers',
+      headers: bearer(bob.token),
       payload: { deviceSecret: DEVICE_SECRET, record: { ...record, weighedWeightKg: 40 } },
     });
     assert.equal(res.statusCode, 400);
@@ -277,7 +352,12 @@ describe('handover, confirmation and traceability', () => {
   });
 
   it('looks the slip up from the scanned QR code', async () => {
-    const res = await app.inject({ method: 'POST', url: '/v1/handovers/lookup', payload: { qr } });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/handovers/lookup',
+      headers: bearer(recyclerAuth),
+      payload: { qr },
+    });
     assert.equal(res.statusCode, 200);
     assert.equal(json(res).record.handoverRef, handoverRef);
     assert.equal(json(res).lot.lotId, lot.lotId);
@@ -289,6 +369,7 @@ describe('handover, confirmation and traceability', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/handovers/lookup',
+      headers: bearer(recyclerAuth),
       payload: { qr: JSON.stringify(tampered) },
     });
     assert.equal(res.statusCode, 409);
@@ -299,6 +380,7 @@ describe('handover, confirmation and traceability', () => {
     const ok = await app.inject({
       method: 'POST',
       url: '/v1/handovers/lookup',
+      headers: bearer(recyclerAuth),
       payload: { handoverRef, verificationCode },
     });
     assert.equal(ok.statusCode, 200);
@@ -306,32 +388,45 @@ describe('handover, confirmation and traceability', () => {
     const wrong = await app.inject({
       method: 'POST',
       url: '/v1/handovers/lookup',
+      headers: bearer(recyclerAuth),
       payload: { handoverRef, verificationCode: '000000' },
     });
     assert.equal(wrong.statusCode, 403);
   });
 
   it('will not let another recycler confirm someone else’s slip', async () => {
-    const other = dataset.recyclers.find((r) => r.recyclerId !== recyclerId)!;
+    // The identity comes from the token, so "confirm as someone else" now
+    // means signing in as them - which is exactly the point.
+    const other = dataset.recyclers.find(
+      (r) => r.recyclerId !== recyclerId && r.authorizationStatus === 'authorized',
+    )!;
+    const otherToken = await signInRecycler(other.recyclerId);
     const res = await app.inject({
       method: 'POST',
       url: `/v1/handovers/${handoverRef}/confirm`,
-      payload: {
-        recyclerId: other.recyclerId,
-        finalPriceInr: 7000,
-        paymentMode: 'cash',
-        paymentStatus: 'paid',
-      },
+      headers: bearer(otherToken),
+      payload: { finalPriceInr: 7000, paymentMode: 'cash', paymentStatus: 'paid' },
     });
     assert.equal(res.statusCode, 403);
+  });
+
+  it('will not let a collector confirm their own handover', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/handovers/${handoverRef}/confirm`,
+      headers: bearer(bob.token),
+      payload: { finalPriceInr: 99999, paymentMode: 'cash', paymentStatus: 'paid' },
+    });
+    assert.equal(res.statusCode, 403);
+    assert.equal(json(res).error, 'auth.wrong_principal');
   });
 
   it('confirms the handover and writes a transaction', async () => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/handovers/${handoverRef}/confirm`,
+      headers: bearer(recyclerAuth),
       payload: {
-        recyclerId,
         finalPriceInr: Math.round(lot.estimatedValueInr),
         paymentMode: 'cash',
         paymentStatus: 'paid',
@@ -348,11 +443,18 @@ describe('handover, confirmation and traceability', () => {
   });
 
   it('is idempotent if the recycler taps confirm twice', async () => {
-    const first = json(await app.inject({ method: 'GET', url: `/v1/handovers/${handoverRef}` }));
+    const first = json(
+      await app.inject({
+        method: 'GET',
+        url: `/v1/handovers/${handoverRef}`,
+        headers: bearer(recyclerAuth),
+      }),
+    );
     const res = await app.inject({
       method: 'POST',
       url: `/v1/handovers/${handoverRef}/confirm`,
-      payload: { recyclerId, finalPriceInr: 1, paymentMode: 'cash', paymentStatus: 'paid' },
+      headers: bearer(recyclerAuth),
+      payload: { finalPriceInr: 1, paymentMode: 'cash', paymentStatus: 'paid' },
     });
     assert.equal(res.statusCode, 200);
     assert.equal(json(res).transaction.transactionId, first.record.transactionId);
@@ -362,20 +464,29 @@ describe('handover, confirmation and traceability', () => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/handovers/${handoverRef}/downstream`,
-      payload: { recyclerId, status: 'reported_to_epr' },
+      headers: bearer(recyclerAuth),
+      payload: { status: 'reported_to_epr' },
     });
     assert.equal(res.statusCode, 200);
     assert.equal(json(res).downstreamStatus, 'reported_to_epr');
   });
 
   it('shows the confirmed handover in the recycler inbox', async () => {
-    const res = await app.inject({ method: 'GET', url: `/v1/recyclers/${recyclerId}/handovers?status=confirmed` });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/recyclers/${recyclerId}/handovers?status=confirmed`,
+      headers: bearer(recyclerAuth),
+    });
     const refs = json(res).handovers.map((h: { record: { handoverRef: string } }) => h.record.handoverRef);
     assert.ok(refs.includes(handoverRef));
   });
 
   it('credits the collector ledger', async () => {
-    const res = await app.inject({ method: 'GET', url: `/v1/collectors/${collectorId}/ledger` });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/collectors/${bob.collectorId}/ledger`,
+      headers: bearer(bob.token),
+    });
     assert.equal(res.statusCode, 200);
     const ledger = json(res);
     assert.ok(ledger.totalEarnedInr > 0);
@@ -389,9 +500,10 @@ describe('protecting the collector', () => {
     const create = await app.inject({
       method: 'POST',
       url: '/v1/lots',
+      headers: bearer(alice.token),
       payload: {
         lotId: 'LOT_TEST_C',
-        collectorId: dataset.collectors[2]!.collectorId,
+        collectorId: alice.collectorId,
         collectionPlace: {
           locality: 'Hadapsar',
           district: 'Pune',
@@ -408,6 +520,7 @@ describe('protecting the collector', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/ml/screen',
+      headers: bearer(alice.token),
       payload: {
         district: 'Pune',
         items: [
@@ -428,6 +541,7 @@ describe('protecting the collector', () => {
       await app.inject({
         method: 'POST',
         url: '/v1/ml/value',
+        headers: bearer(alice.token),
         payload: {
           subCategoryId: 'cable_copper_house',
           weightKg: 10,
@@ -440,6 +554,7 @@ describe('protecting the collector', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/ml/screen',
+      headers: bearer(alice.token),
       payload: {
         district: 'Pune',
         items: [{ subCategoryId: 'cable_copper_house', approxWeightKg: 10, quantity: 1, condition: 'burnt' }],
@@ -455,6 +570,7 @@ describe('protecting the collector', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/ml/classify',
+      headers: bearer(alice.token),
       payload: { imageRef: 'file://photo.jpg', district: 'Pune' },
     });
     const body = json(res);
@@ -465,12 +581,11 @@ describe('protecting the collector', () => {
 });
 
 describe('offline sync', () => {
-  const collectorId = dataset.collectors[3]!.collectorId;
-  const deviceId = 'DEV_TEST_1';
+  const deviceId = 'DEV_ALICE';
 
   const lotPayload = (lotId: string) => ({
     lotId,
-    collectorId,
+    collectorId: alice.collectorId,
     status: 'ready',
     items: [],
     totalWeightKg: 8,
@@ -485,9 +600,10 @@ describe('offline sync', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/sync/push',
+      headers: bearer(alice.token),
       payload: {
         deviceId,
-        collectorId,
+        collectorId: alice.collectorId,
         changes: [
           {
             changeId: 'CHG_1',
@@ -510,9 +626,10 @@ describe('offline sync', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/sync/push',
+      headers: bearer(alice.token),
       payload: {
         deviceId,
-        collectorId,
+        collectorId: alice.collectorId,
         changes: [
           {
             changeId: 'CHG_1',
@@ -534,9 +651,10 @@ describe('offline sync', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/sync/push',
+      headers: bearer(alice.token),
       payload: {
         deviceId,
-        collectorId,
+        collectorId: alice.collectorId,
         changes: [
           {
             changeId: 'CHG_2',
@@ -558,9 +676,10 @@ describe('offline sync', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/sync/push',
+      headers: bearer(alice.token),
       payload: {
         deviceId,
-        collectorId,
+        collectorId: alice.collectorId,
         changes: [
           {
             changeId: 'CHG_3',
@@ -585,7 +704,8 @@ describe('offline sync', () => {
       await app.inject({
         method: 'POST',
         url: '/v1/sync/pull',
-        payload: { collectorId, districts: ['Pune'] },
+        headers: bearer(alice.token),
+        payload: { collectorId: alice.collectorId, districts: ['Pune'] },
       }),
     );
     assert.ok(first.priceIndex, 'a device with no index must receive one');
@@ -595,8 +715,9 @@ describe('offline sync', () => {
       await app.inject({
         method: 'POST',
         url: '/v1/sync/pull',
+        headers: bearer(alice.token),
         payload: {
-          collectorId,
+          collectorId: alice.collectorId,
           districts: ['Pune'],
           knownPriceIndexVersion: first.priceIndexVersion,
           knownRecyclerVersion: first.recyclerVersion,
@@ -605,5 +726,265 @@ describe('offline sync', () => {
     );
     assert.equal(second.priceIndex, undefined, 'an unchanged index must not be re-sent over a metered connection');
     assert.equal(second.recyclers, undefined);
+  });
+});
+
+describe('authentication', () => {
+  it('issues a token for a valid code and identifies the caller', async () => {
+    const phone = '9876511111';
+    const requested = json(
+      await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } }),
+    );
+    assert.ok(requested.challengeId);
+    assert.match(requested.devCode, /^\d{6}$/);
+
+    const verified = json(
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/collector/verify',
+        payload: {
+          challengeId: requested.challengeId,
+          code: requested.devCode,
+          phone,
+          deviceId: 'DEV_NEW',
+        },
+      }),
+    );
+    assert.ok(verified.token);
+    assert.ok(verified.collector.collectorId);
+    // The number itself is never stored, only a hash of it.
+    assert.equal(verified.collector.phone, undefined);
+    assert.notEqual(verified.collector.phoneHash, phone);
+
+    const me = json(
+      await app.inject({ method: 'GET', url: '/v1/auth/me', headers: bearer(verified.token) }),
+    );
+    assert.equal(me.kind, 'collector');
+    assert.equal(me.id, verified.collector.collectorId);
+    assert.equal(me.deviceId, 'DEV_NEW');
+  });
+
+  it('returns the same collector when the same number signs in again', async () => {
+    const phone = '9876522222';
+    const first = await signInCollector(phone, 'DEV_A');
+    const second = await signInCollector(phone, 'DEV_B');
+    assert.equal(second.collectorId, first.collectorId, 'one number is one collector');
+    assert.notEqual(second.token, first.token);
+  });
+
+  it('rejects a wrong code', async () => {
+    const phone = '9876533333';
+    const requested = json(
+      await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } }),
+    );
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/collector/verify',
+      payload: { challengeId: requested.challengeId, code: '000000', phone, deviceId: 'DEV_X' },
+    });
+    assert.equal(res.statusCode, 400);
+    assert.equal(json(res).error, 'auth.invalid_code');
+  });
+
+  it('will not let a code be used twice', async () => {
+    const phone = '9876544444';
+    const requested = json(
+      await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } }),
+    );
+    const payload = {
+      challengeId: requested.challengeId,
+      code: requested.devCode,
+      phone,
+      deviceId: 'DEV_Y',
+    };
+    assert.equal((await app.inject({ method: 'POST', url: '/v1/auth/collector/verify', payload })).statusCode, 200);
+    const replay = await app.inject({ method: 'POST', url: '/v1/auth/collector/verify', payload });
+    assert.equal(replay.statusCode, 400);
+    assert.equal(json(replay).error, 'auth.code_already_used');
+  });
+
+  it('stops guessing after five wrong attempts', async () => {
+    const phone = '9876555555';
+    const requested = json(
+      await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } }),
+    );
+    const attempt = (code: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/v1/auth/collector/verify',
+        payload: { challengeId: requested.challengeId, code, phone, deviceId: 'DEV_Z' },
+      });
+
+    for (let i = 0; i < 5; i++) assert.equal((await attempt('000000')).statusCode, 400);
+    const locked = await attempt('000000');
+    assert.equal(locked.statusCode, 429);
+    assert.equal(json(locked).error, 'auth.too_many_attempts');
+
+    // Even the correct code is refused once the challenge is burned.
+    const correct = await attempt(requested.devCode);
+    assert.equal(correct.statusCode, 429);
+  });
+
+  it('rate limits how many codes one number can request', async () => {
+    const phone = '9876566666';
+    for (let i = 0; i < 5; i++) {
+      const ok = await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } });
+      assert.equal(ok.statusCode, 200, `request ${i} should succeed`);
+    }
+    // Protects someone else's phone from being used as a free SMS cannon.
+    const limited = await app.inject({ method: 'POST', url: '/v1/auth/collector/request', payload: { phone } });
+    assert.equal(limited.statusCode, 429);
+    assert.ok(limited.headers['retry-after']);
+  });
+
+  it('rejects a number that cannot be an Indian mobile', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/collector/request',
+      payload: { phone: '1234567890' },
+    });
+    assert.equal(res.statusCode, 400);
+  });
+
+  it('refuses to sign in a facility whose authorisation is not current', async () => {
+    const lapsed = dataset.recyclers.find((r) => r.authorizationStatus !== 'authorized');
+    if (!lapsed) return;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/recycler/request',
+      payload: { recyclerId: lapsed.recyclerId },
+    });
+    assert.equal(res.statusCode, 403);
+    assert.equal(json(res).error, 'auth.facility_not_authorized');
+  });
+
+  it('ignores a token whose payload was edited', async () => {
+    const [version, body, signature] = alice.token.split('.') as [string, string, string];
+    void body;
+    const forged = Buffer.from(
+      JSON.stringify({ sub: bob.collectorId, kind: 'collector', iat: 0, exp: 9_999_999_999 }),
+    ).toString('base64url');
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/collectors/${bob.collectorId}/ledger`,
+      headers: bearer(`${version}.${forged}.${signature}`),
+    });
+    assert.equal(res.statusCode, 401);
+  });
+
+  it('cuts off every token issued to a revoked device', async () => {
+    const phone = '9876577777';
+    const session = await signInCollector(phone, 'DEV_LOST');
+    const before = await app.inject({ method: 'GET', url: '/v1/auth/me', headers: bearer(session.token) });
+    assert.equal(before.statusCode, 200);
+
+    // Losing the phone must not mean waiting 90 days for the token to expire.
+    await app.repository.upsertDevice({
+      deviceId: 'DEV_LOST',
+      collectorId: session.collectorId,
+      platform: 'android',
+      createdAt: new Date().toISOString(),
+      revokedAt: new Date().toISOString(),
+    });
+
+    const after = await app.inject({ method: 'GET', url: '/v1/auth/me', headers: bearer(session.token) });
+    assert.equal(after.statusCode, 401);
+  });
+});
+
+describe('authorisation boundaries', () => {
+  it('refuses guarded routes with no token', async () => {
+    const guarded: Array<[string, string]> = [
+      ['GET', `/v1/collectors/${alice.collectorId}/ledger`],
+      ['GET', `/v1/collectors/${alice.collectorId}/lots`],
+      ['GET', '/v1/lots/LOT_TEST_A'],
+      ['POST', '/v1/ml/classify'],
+      ['POST', '/v1/sync/pull'],
+    ];
+    for (const [method, url] of guarded) {
+      const res = await app.inject({ method: method as 'GET', url, payload: method === 'POST' ? {} : undefined });
+      assert.equal(res.statusCode, 401, `${method} ${url} should require a token`);
+    }
+  });
+
+  it('will not show one collector another collector’s earnings', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/collectors/${bob.collectorId}/ledger`,
+      headers: bearer(alice.token),
+    });
+    // 404, not 403: a 403 would confirm the id exists, which is an enumeration
+    // oracle over a list of people whose earnings these are.
+    assert.equal(res.statusCode, 404);
+    assert.equal(json(res).error, 'not_found');
+  });
+
+  it('will not let a collector create a lot for someone else', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/lots',
+      headers: bearer(alice.token),
+      payload: {
+        collectorId: bob.collectorId,
+        collectionPlace: { locality: 'Kothrud', district: 'Pune', state: 'Maharashtra' },
+        items: [
+          { categoryId: 'cable', subCategoryId: 'cable_copper_house', approxWeightKg: 5, condition: 'intact' },
+        ],
+      },
+    });
+    assert.equal(res.statusCode, 404);
+  });
+
+  it('will not let a collector push sync changes for someone else', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/sync/push',
+      headers: bearer(alice.token),
+      payload: { deviceId: 'DEV_ALICE', collectorId: bob.collectorId, changes: [] },
+    });
+    assert.equal(res.statusCode, 404);
+  });
+
+  it('will not show one facility another facility’s transactions', async () => {
+    const authorised = dataset.recyclers.filter((r) => r.authorizationStatus === 'authorized');
+    const token = await signInRecycler(authorised[0]!.recyclerId);
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/recyclers/${authorised[1]!.recyclerId}/transactions`,
+      headers: bearer(token),
+    });
+    assert.equal(res.statusCode, 404);
+  });
+
+  it('keeps the price board and reference data public', async () => {
+    // Price transparency is the point of the platform, so it is not gated.
+    for (const url of [
+      '/v1/prices/board?district=Pune',
+      '/v1/reference/taxonomy',
+      '/v1/reference/safety',
+      '/v1/reference/strings/mr',
+      '/v1/recyclers?district=Pune',
+    ]) {
+      assert.equal((await app.inject({ method: 'GET', url })).statusCode, 200, `${url} should be public`);
+    }
+  });
+
+  it('hides rate cards and contact numbers from anonymous callers', async () => {
+    const anonymous = json(await app.inject({ method: 'GET', url: '/v1/recyclers?district=Pune' }));
+    assert.equal(anonymous.directoryOnly, true);
+    for (const recycler of anonymous.recyclers) {
+      assert.equal(recycler.offeredRatesInr, undefined, 'rate cards are commercially sensitive');
+      assert.equal(recycler.contactPhone, undefined);
+      // The directory still answers "who near me is authorised?".
+      assert.ok(recycler.name);
+      assert.equal(recycler.authorizationStatus, 'authorized');
+    }
+
+    const authenticated = json(
+      await app.inject({ method: 'GET', url: '/v1/recyclers?district=Pune', headers: bearer(alice.token) }),
+    );
+    assert.equal(authenticated.directoryOnly, undefined);
+    assert.ok(authenticated.recyclers[0].offeredRatesInr);
+    assert.ok(authenticated.recyclers[0].contactPhone);
   });
 });

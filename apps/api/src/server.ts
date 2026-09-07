@@ -11,6 +11,8 @@ import { HandoverService } from './services/handover.ts';
 import { LedgerService } from './services/ledger.ts';
 import { SyncService } from './services/sync.ts';
 import { MlService } from './services/ml.ts';
+import { AuthService } from './services/auth.ts';
+import { attachAuth } from './plugins/auth.ts';
 import { referenceRoutes } from './routes/reference.ts';
 import { priceRoutes } from './routes/prices.ts';
 import { lotRoutes } from './routes/lots.ts';
@@ -19,6 +21,7 @@ import { handoverRoutes } from './routes/handovers.ts';
 import { ledgerRoutes } from './routes/ledger.ts';
 import { syncRoutes } from './routes/sync.ts';
 import { mlRoutes } from './routes/ml.ts';
+import { authRoutes } from './routes/auth.ts';
 
 export interface BuildOptions {
   config?: Partial<Config>;
@@ -38,6 +41,7 @@ export async function buildServer(options: BuildOptions = {}): Promise<FastifyIn
   const ledger = new LedgerService(repo);
   const sync = new SyncService(repo, prices);
   const ml = new MlService(repo, prices);
+  const auth = new AuthService(repo, config);
 
   const app = Fastify({
     logger: { level: config.logLevel },
@@ -46,13 +50,18 @@ export async function buildServer(options: BuildOptions = {}): Promise<FastifyIn
   });
 
   await app.register(cors, { origin: config.corsOrigins });
+  attachAuth(app, { config, repository: repo });
 
   app.get('/health', async () => ({
     status: 'ok',
     dataSource: repo.kind,
+    // Surfaced so nobody demos a build that hands out one-time codes without
+    // realising it.
+    authDevMode: config.authDevMode,
     time: new Date().toISOString(),
   }));
 
+  await authRoutes(app, auth, repo);
   await referenceRoutes(app);
   await priceRoutes(app, prices);
   await lotRoutes(app, lots, matching);

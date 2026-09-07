@@ -6,7 +6,7 @@ import {
   type Recycler,
   type Transaction,
 } from '@ewaste/shared';
-import { api, OfflineError } from '../api/client.ts';
+import { api, OfflineError, UnauthorizedError } from '../api/client.ts';
 import {
   REFERENCE_KEYS,
   cacheReference,
@@ -35,6 +35,8 @@ export type SyncState =
   | { kind: 'idle'; pending: number; lastSyncAt?: string }
   | { kind: 'offline'; pending: number; lastSyncAt?: string }
   | { kind: 'syncing'; pending: number }
+  /** The token was rejected. Work stays queued; the collector must sign in again. */
+  | { kind: 'signed_out'; pending: number }
   | { kind: 'error'; pending: number; message: string };
 
 export async function isOnline(): Promise<boolean> {
@@ -92,7 +94,7 @@ export async function runSync(options: {
         await dropFromOutbox([entry.changeId]);
         result.pushed += 1;
       } catch (error) {
-        if (error instanceof OfflineError) throw error;
+        if (error instanceof OfflineError || error instanceof UnauthorizedError) throw error;
         await deferOutbox(entry.changeId, entry.attempts, String(error));
         result.failed += 1;
       }
@@ -156,6 +158,10 @@ export async function runSync(options: {
     const pending = await pendingCount();
     if (error instanceof OfflineError) {
       onState?.({ kind: 'offline', pending, lastSyncAt: await getMeta('lastSyncAt') });
+    } else if (error instanceof UnauthorizedError) {
+      // Nothing is discarded: the outbox keeps everything until a new token
+      // arrives, so a rejected token costs a sign-in, never a day's work.
+      onState?.({ kind: 'signed_out', pending });
     } else {
       onState?.({ kind: 'error', pending, message: String(error) });
     }

@@ -3,9 +3,36 @@ import type {
   HandoverRecord,
   Lot,
   PricePoint,
+  Principal,
   Recycler,
   Transaction,
 } from '@ewaste/shared';
+
+/** A pending one-time passcode. The code itself is stored only as a hash. */
+export interface OtpChallenge {
+  challengeId: string;
+  /** HMAC of the phone number. The raw number is never stored. */
+  phoneHash: string;
+  codeHash: string;
+  kind: Principal;
+  /** For recycler sign-in: which facility this challenge is for. */
+  recyclerId?: string;
+  createdAt: string;
+  expiresAt: string;
+  attempts: number;
+  consumedAt?: string;
+}
+
+/** A registered phone. Revoking one cuts off every token issued to it. */
+export interface DeviceRecord {
+  deviceId: string;
+  collectorId: string;
+  platform: string;
+  appVersion?: string;
+  createdAt: string;
+  lastSeenAt?: string;
+  revokedAt?: string;
+}
 
 /**
  * The storage port.
@@ -61,6 +88,15 @@ export interface Repository {
     limit?: number;
   }): Promise<Transaction[]>;
   upsertTransaction(transaction: Transaction): Promise<Transaction>;
+
+  /* Auth */
+  createOtpChallenge(challenge: OtpChallenge): Promise<void>;
+  getOtpChallenge(challengeId: string): Promise<OtpChallenge | undefined>;
+  updateOtpChallenge(challengeId: string, patch: Partial<OtpChallenge>): Promise<void>;
+  /** Rate limiting: how many challenges this number has asked for recently. */
+  countOtpChallengesSince(phoneHash: string, since: Date): Promise<number>;
+  upsertDevice(device: DeviceRecord): Promise<void>;
+  getDevice(deviceId: string): Promise<DeviceRecord | undefined>;
 
   /* Sync */
   wasChangeApplied(changeId: string): Promise<boolean>;

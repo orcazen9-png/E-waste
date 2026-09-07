@@ -4,6 +4,7 @@ export * from './hash.ts';
 export * from './geo.ts';
 export * from './ids.ts';
 export * from './sync.ts';
+export * from './auth.ts';
 export * from './safety.ts';
 export * from './domain/priceIndex.ts';
 export * from './domain/valuation.ts';

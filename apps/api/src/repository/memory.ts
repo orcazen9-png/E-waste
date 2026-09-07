@@ -7,7 +7,7 @@ import type {
   Recycler,
   Transaction,
 } from '@ewaste/shared';
-import type { Repository } from './types.ts';
+import type { DeviceRecord, OtpChallenge, Repository } from './types.ts';
 
 /**
  * In-memory adapter backed by the synthetic seed dataset.
@@ -29,6 +29,8 @@ export class MemoryRepository implements Repository {
   private handovers = new Map<string, HandoverRecord>();
   private transactions = new Map<string, Transaction>();
   private appliedChanges = new Set<string>();
+  private otpChallenges = new Map<string, OtpChallenge>();
+  private devices = new Map<string, DeviceRecord>();
   private feed: Array<{
     serverSeq: number;
     collectorId: string;
@@ -178,6 +180,35 @@ export class MemoryRepository implements Repository {
   async upsertTransaction(transaction: Transaction): Promise<Transaction> {
     this.transactions.set(transaction.transactionId, transaction);
     return transaction;
+  }
+
+  async createOtpChallenge(challenge: OtpChallenge): Promise<void> {
+    this.otpChallenges.set(challenge.challengeId, challenge);
+  }
+
+  async getOtpChallenge(challengeId: string): Promise<OtpChallenge | undefined> {
+    return this.otpChallenges.get(challengeId);
+  }
+
+  async updateOtpChallenge(challengeId: string, patch: Partial<OtpChallenge>): Promise<void> {
+    const existing = this.otpChallenges.get(challengeId);
+    if (existing) this.otpChallenges.set(challengeId, { ...existing, ...patch });
+  }
+
+  async countOtpChallengesSince(phoneHash: string, since: Date): Promise<number> {
+    let count = 0;
+    for (const challenge of this.otpChallenges.values()) {
+      if (challenge.phoneHash === phoneHash && Date.parse(challenge.createdAt) >= since.getTime()) count++;
+    }
+    return count;
+  }
+
+  async upsertDevice(device: DeviceRecord): Promise<void> {
+    this.devices.set(device.deviceId, device);
+  }
+
+  async getDevice(deviceId: string): Promise<DeviceRecord | undefined> {
+    return this.devices.get(deviceId);
   }
 
   async wasChangeApplied(changeId: string): Promise<boolean> {

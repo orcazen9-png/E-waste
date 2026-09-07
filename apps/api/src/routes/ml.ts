@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ALL_SUB_CATEGORY_IDS } from '@ewaste/shared';
 import type { MlService } from '../services/ml.ts';
+import { requireAuth } from '../plugins/auth.ts';
 
 const classifyBody = z.object({
   imageRef: z.string().min(1),
@@ -42,18 +43,21 @@ const screenBody = z.object({
 
 export async function mlRoutes(app: FastifyInstance, ml: MlService): Promise<void> {
   app.post('/v1/ml/classify', async (request, reply) => {
+    if (!requireAuth(request, reply)) return reply;
     const parsed = classifyBody.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
     return ml.classify(parsed.data);
   });
 
   app.post('/v1/ml/value', async (request, reply) => {
+    if (!requireAuth(request, reply)) return reply;
     const parsed = valueBody.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
     return ml.value(parsed.data);
   });
 
   app.post('/v1/ml/screen', async (request, reply) => {
+    if (!requireAuth(request, reply)) return reply;
     const parsed = screenBody.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body', issues: parsed.error.issues });
     return ml.screenTransaction(parsed.data as Parameters<MlService['screenTransaction']>[0]);

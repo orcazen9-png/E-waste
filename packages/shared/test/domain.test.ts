@@ -9,6 +9,16 @@ import { RuleBasedAnomalyDetector, robustZ, worstSeverity } from '../src/domain/
 import { PriorBasedClassifier } from '../src/domain/classification.ts';
 import { createHandover, verifyHandover, handoverQrPayload, parseHandoverQr } from '../src/domain/handover.ts';
 import { resolveConflict, backoffMs } from '../src/sync.ts';
+import {
+  buildToken,
+  constantTimeEqual,
+  hashOtp,
+  isPlausibleIndianMobile,
+  normalisePhone,
+  verifyToken,
+  COLLECTOR_TOKEN_TTL_SECONDS,
+  RECYCLER_TOKEN_TTL_SECONDS,
+} from '../src/auth.ts';
 import { sha256Hex, hmacSha256Hex, hashPhone } from '../src/hash.ts';
 import { haversineKm } from '../src/geo.ts';
 import { verificationCodeFor, splitForKey, newLotId } from '../src/ids.ts';
@@ -593,5 +603,95 @@ describe('classification', () => {
       recentSubCategoryIds: ['crt_tv', 'crt_tv', 'crt_tv'],
     });
     assert.equal(result.candidates[0]!.subCategoryId, 'crt_tv');
+  });
+});
+
+describe('access tokens', () => {
+  const SECRET = 'server-signing-secret';
+  const NOW_AUTH = new Date('2026-09-07T12:00:00.000Z');
+
+  it('round-trips a token it signed', () => {
+    const { token, expiresAt } = buildToken('collector', 'COL_1', SECRET, {
+      deviceId: 'DEV_1',
+      now: NOW_AUTH,
+    });
+    const result = verifyToken(token, SECRET, NOW_AUTH);
+    assert.equal(result.valid, true);
+    if (!result.valid) return;
+    assert.equal(result.payload.sub, 'COL_1');
+    assert.equal(result.payload.kind, 'collector');
+    assert.equal(result.payload.did, 'DEV_1');
+    assert.ok(Date.parse(expiresAt) > NOW_AUTH.getTime());
+  });
+
+  it('rejects a token signed with a different secret', () => {
+    const { token } = buildToken('collector', 'COL_1', SECRET, { now: NOW_AUTH });
+    const result = verifyToken(token, 'other-secret', NOW_AUTH);
+    assert.equal(result.valid, false);
+    if (result.valid) return;
+    assert.equal(result.reason, 'bad_signature');
+  });
+
+  it('rejects a payload edited after signing', () => {
+    const { token } = buildToken('collector', 'COL_1', SECRET, { now: NOW_AUTH });
+    const [version, , signature] = token.split('.') as [string, string, string];
+    // Re-encode the payload as a recycler and keep the original signature.
+    const forged = Buffer.from(
+      JSON.stringify({ sub: 'REC_1', kind: 'recycler', iat: 0, exp: 9_999_999_999 }),
+    )
+      .toString('base64url');
+    const result = verifyToken(`${version}.${forged}.${signature}`, SECRET, NOW_AUTH);
+    assert.equal(result.valid, false);
+    if (result.valid) return;
+    assert.equal(result.reason, 'bad_signature');
+  });
+
+  it('rejects an expired token', () => {
+    const { token } = buildToken('recycler', 'REC_1', SECRET, { now: NOW_AUTH, ttlSeconds: 60 });
+    const later = new Date(NOW_AUTH.getTime() + 61_000);
+    const result = verifyToken(token, SECRET, later);
+    assert.equal(result.valid, false);
+    if (result.valid) return;
+    assert.equal(result.reason, 'expired');
+  });
+
+  it('rejects malformed tokens without throwing', () => {
+    for (const bad of ['', 'nonsense', 'v1.only-two', 'v2.abc.def', 'v1..', 'v1.!!!.!!!']) {
+      const result = verifyToken(bad, SECRET, NOW_AUTH);
+      assert.equal(result.valid, false, `expected ${bad} to be rejected`);
+    }
+  });
+
+  it('gives collectors a long life and recyclers a short one', () => {
+    // A phone can be offline for days; a shared yard terminal should not stay
+    // signed in overnight.
+    assert.ok(COLLECTOR_TOKEN_TTL_SECONDS > RECYCLER_TOKEN_TTL_SECONDS * 100);
+  });
+
+  it('compares in constant time regardless of where strings differ', () => {
+    assert.equal(constantTimeEqual('abc', 'abc'), true);
+    assert.equal(constantTimeEqual('abc', 'abd'), false);
+    assert.equal(constantTimeEqual('abc', 'abcd'), false);
+  });
+});
+
+describe('one-time passcodes', () => {
+  it('binds the code hash to the phone hash so it cannot be replayed elsewhere', () => {
+    const a = hashOtp('phone-hash-a', '123456', 'secret');
+    const b = hashOtp('phone-hash-b', '123456', 'secret');
+    assert.notEqual(a, b);
+    assert.equal(a, hashOtp('phone-hash-a', '123456', 'secret'));
+  });
+
+  it('normalises the ways an Indian mobile number gets typed', () => {
+    for (const input of ['+91 98765 43210', '098765-43210', '9876543210', '+919876543210']) {
+      assert.equal(normalisePhone(input), '9876543210', `failed for ${input}`);
+    }
+  });
+
+  it('rejects numbers that cannot be Indian mobiles', () => {
+    assert.equal(isPlausibleIndianMobile('9876543210'), true);
+    assert.equal(isPlausibleIndianMobile('1234567890'), false, 'must start 6-9');
+    assert.equal(isPlausibleIndianMobile('98765'), false, 'too short');
   });
 });

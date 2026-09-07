@@ -9,7 +9,7 @@ import type {
   Recycler,
   Transaction,
 } from '@ewaste/shared';
-import type { Repository } from './types.ts';
+import type { DeviceRecord, OtpChallenge, Repository } from './types.ts';
 
 /**
  * Postgres adapter.
@@ -255,6 +255,85 @@ export class PrismaRepository implements Repository {
       update: data,
     });
     return toTransaction(row);
+  }
+
+  /* ---------------- auth ---------------- */
+
+  async createOtpChallenge(challenge: OtpChallenge): Promise<void> {
+    await this.prisma.otpChallenge.create({
+      data: {
+        challengeId: challenge.challengeId,
+        phoneHash: challenge.phoneHash,
+        codeHash: challenge.codeHash,
+        kind: challenge.kind,
+        recyclerId: challenge.recyclerId ?? null,
+        createdAt: new Date(challenge.createdAt),
+        expiresAt: new Date(challenge.expiresAt),
+        attempts: challenge.attempts,
+      },
+    });
+  }
+
+  async getOtpChallenge(challengeId: string): Promise<OtpChallenge | undefined> {
+    const row = await this.prisma.otpChallenge.findUnique({ where: { challengeId } });
+    if (!row) return undefined;
+    return {
+      challengeId: row.challengeId,
+      phoneHash: row.phoneHash,
+      codeHash: row.codeHash,
+      kind: row.kind as OtpChallenge['kind'],
+      recyclerId: row.recyclerId ?? undefined,
+      createdAt: row.createdAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      attempts: row.attempts,
+      consumedAt: row.consumedAt?.toISOString(),
+    };
+  }
+
+  async updateOtpChallenge(challengeId: string, patch: Partial<OtpChallenge>): Promise<void> {
+    await this.prisma.otpChallenge.update({
+      where: { challengeId },
+      data: {
+        ...(patch.attempts !== undefined ? { attempts: patch.attempts } : {}),
+        ...(patch.consumedAt ? { consumedAt: new Date(patch.consumedAt) } : {}),
+      },
+    });
+  }
+
+  async countOtpChallengesSince(phoneHash: string, since: Date): Promise<number> {
+    return this.prisma.otpChallenge.count({ where: { phoneHash, createdAt: { gte: since } } });
+  }
+
+  async upsertDevice(device: DeviceRecord): Promise<void> {
+    const data = {
+      collectorId: device.collectorId,
+      platform: device.platform,
+      appVersion: device.appVersion ?? null,
+      lastSeenAt: device.lastSeenAt ? new Date(device.lastSeenAt) : null,
+      revokedAt: device.revokedAt ? new Date(device.revokedAt) : null,
+      // A device secret hash is not stored here: the secret that signs
+      // handover slips never leaves the phone and the server never sees it.
+      deviceSecretHash: '',
+    };
+    await this.prisma.device.upsert({
+      where: { deviceId: device.deviceId },
+      create: { deviceId: device.deviceId, createdAt: new Date(device.createdAt), ...data },
+      update: data,
+    });
+  }
+
+  async getDevice(deviceId: string): Promise<DeviceRecord | undefined> {
+    const row = await this.prisma.device.findUnique({ where: { deviceId } });
+    if (!row) return undefined;
+    return {
+      deviceId: row.deviceId,
+      collectorId: row.collectorId,
+      platform: row.platform,
+      appVersion: row.appVersion ?? undefined,
+      createdAt: row.createdAt.toISOString(),
+      lastSeenAt: row.lastSeenAt?.toISOString(),
+      revokedAt: row.revokedAt?.toISOString(),
+    };
   }
 
   /* ---------------- sync ---------------- */

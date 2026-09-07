@@ -35,7 +35,7 @@ type Route =
   | { name: 'safety' };
 
 function Router() {
-  const { ready, language, setLanguage } = useApp();
+  const { ready, language, signedIn } = useApp();
   const [onboarded, setOnboarded] = useState<boolean | undefined>();
   const [route, setRoute] = useState<Route>({ name: 'home' });
   const [totals, setTotals] = useState({ pending: 0, week: 0 });
@@ -66,11 +66,13 @@ function Router() {
     );
   }
 
-  if (!onboarded) {
+  // Onboarding is complete only once a token exists. A rejected or expired
+  // token brings this screen back rather than leaving the app silently unable
+  // to sync.
+  if (!onboarded || !signedIn) {
     return (
       <Onboarding
-        onPick={async (picked) => {
-          await setLanguage(picked);
+        onDone={async () => {
           await setMeta('onboarded', '1');
           setOnboarded(true);
         }}
