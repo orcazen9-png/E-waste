@@ -54,10 +54,11 @@ export function Rates({ recycler }: { recycler: Recycler }) {
         piece of work.
       </p>
 
-      <table>
+      <div className="table-scroll">
+          <table>
         <thead>
           <tr>
-            <th>Material</th>
+            <th className="wrap">Material</th>
             <th className="num">Your rate</th>
             <th className="num">District median</th>
             <th className="num">Difference</th>
@@ -66,7 +67,7 @@ export function Rates({ recycler }: { recycler: Recycler }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.key}>
-              <td>
+              <td className="wrap">
                 {row.glyph} {row.name}
               </td>
               <td className="num">
@@ -87,9 +88,11 @@ export function Rates({ recycler }: { recycler: Recycler }) {
           ))}
         </tbody>
       </table>
+          </div>
 
       <h3 style={{ marginTop: 20 }}>Facility</h3>
-      <table>
+      <div className="table-scroll">
+          <table>
         <tbody>
           <tr>
             <th>Authorisation</th>
@@ -121,6 +124,7 @@ export function Rates({ recycler }: { recycler: Recycler }) {
           </tr>
         </tbody>
       </table>
+          </div>
       <p className="small muted" style={{ marginTop: 10 }}>
         Rate-card keys use the <span className="mono">{rateKey('cable', 'cable_copper_house')}</span> convention, with
         a <span className="mono">{rateKey('cable')}</span> fallback per category.

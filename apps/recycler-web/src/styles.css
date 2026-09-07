@@ -47,7 +47,7 @@ header.top {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 18px;
 }
-header.top h1 { font-size: 18px; margin: 0; flex: 1; }
+header.top h1 { font-size: 18px; margin: 0; flex: 1; min-width: 140px; }
 header.top .env { font-size: 12px; color: var(--muted); }
 
 nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -91,8 +91,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .big-number { font-size: 30px; font-weight: 650; font-variant-numeric: tabular-nums; }
 
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+/* Tables must scroll inside their own container, never clip. A recycler
+   checking the inbox on a phone was losing the right-hand columns entirely
+   with no way to reach them. */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+table { width: 100%; border-collapse: collapse; min-width: 520px; }
+th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; }
+/* The materials column is the one that genuinely needs to wrap. */
+td.wrap, th.wrap { white-space: normal; min-width: 160px; }
 th { color: var(--muted); font-weight: 500; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 

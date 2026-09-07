@@ -66,12 +66,13 @@ export function Transactions({ recyclerId }: { recyclerId: string }) {
         {!rows && !error && <div className="empty">Loading…</div>}
         {rows?.length === 0 && <div className="empty">No transactions yet.</div>}
         {rows && rows.length > 0 && (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
                 <th>When</th>
                 <th>Collector</th>
-                <th>Materials</th>
+                <th className="wrap">Materials</th>
                 <th className="num">Weight</th>
                 <th className="num">Paid</th>
                 <th>Payment</th>
@@ -83,7 +84,7 @@ export function Transactions({ recyclerId }: { recyclerId: string }) {
                 <tr key={t.transactionId}>
                   <td className="small">{dateTime(t.handoverAt)}</td>
                   <td className="mono small">{t.collectorId}</td>
-                  <td className="small">{t.categorySummary.join(', ')}</td>
+                  <td className="small wrap">{t.categorySummary.join(', ')}</td>
                   <td className="num">{t.totalWeightKg} kg</td>
                   <td className="num">{inr(t.finalPriceInr)}</td>
                   <td>
@@ -104,6 +105,7 @@ export function Transactions({ recyclerId }: { recyclerId: string }) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </>

@@ -42,11 +42,12 @@ export function Inbox({ recyclerId }: { recyclerId: string }) {
       )}
 
       {rows && rows.length > 0 && (
-        <table>
+        <div className="table-scroll">
+          <table>
           <thead>
             <tr>
               <th>Reference</th>
-              <th>Materials</th>
+              <th className="wrap">Materials</th>
               <th className="num">Declared</th>
               <th className="num">Their estimate</th>
               <th>Signed</th>
@@ -57,7 +58,7 @@ export function Inbox({ recyclerId }: { recyclerId: string }) {
             {rows.map(({ record, lot }) => (
               <tr key={record.handoverRef}>
                 <td className="mono">{record.handoverRef}</td>
-                <td>
+                <td className="wrap">
                   {lot
                     ? lot.items
                         .map((i) => `${getSubCategory(i.subCategoryId).sub.glyph} ${label(getSubCategory(i.subCategoryId).sub.labelKey)}`)
@@ -89,6 +90,7 @@ export function Inbox({ recyclerId }: { recyclerId: string }) {
             ))}
           </tbody>
         </table>
+          </div>
       )}
     </div>
   );

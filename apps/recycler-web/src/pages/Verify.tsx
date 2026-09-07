@@ -194,10 +194,11 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
       {lot && (
         <>
           <h3>What the collector recorded</h3>
-          <table style={{ marginBottom: 14 }}>
+          <div className="table-scroll" style={{ marginBottom: 14 }}>
+          <table>
             <thead>
               <tr>
-                <th>Material</th>
+                <th className="wrap">Material</th>
                 <th>Condition</th>
                 <th className="num">Weight</th>
                 <th className="num">Their estimate</th>
@@ -208,7 +209,7 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
                 const { sub } = getSubCategory(item.subCategoryId);
                 return (
                   <tr key={item.materialId}>
-                    <td>
+                    <td className="wrap">
                       {sub.glyph} {label(sub.labelKey)}
                     </td>
                     <td className="muted">{label(`condition.${item.condition}`)}</td>
@@ -219,6 +220,7 @@ function SlipDetail({ found, recyclerId }: { found: HandoverWithLot; recyclerId:
               })}
             </tbody>
           </table>
+          </div>
           <p className="small muted">
             Collected {dateTime(lot.collectedAt)} in {lot.collectionPlace.locality},{' '}
             {lot.collectionPlace.district}. Slip signed {dateTime(record.createdAt)}.
