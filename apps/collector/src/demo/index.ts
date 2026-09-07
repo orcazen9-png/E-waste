@@ -1,5 +1,5 @@
 import type { PriceIndex, Recycler } from '@ewaste/shared';
-import { REFERENCE_KEYS, cacheReference, saveTransactions, type TransactionRow } from '../db/index.ts';
+import { REFERENCE_KEYS, cacheReference, saveTransactions, type TransactionRow } from '../db';
 import bundle from './bundle.json';
 
 /**

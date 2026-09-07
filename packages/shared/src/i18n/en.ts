@@ -78,6 +78,8 @@ export const en = {
 
   /* Lot creation */
   'lot.photo_prompt': 'Take a photo of the material',
+  'lot.photo_why': 'The photo stays on your phone. It proves what you handed over.',
+  'lot.photo_skip': 'Continue without a photo',
   'lot.pick_category': 'What is it?',
   'lot.pick_subcategory': 'Which type?',
   'lot.enter_weight': 'How much weight?',
@@ -120,6 +122,8 @@ export const en = {
   'match.excluded.too_far': 'Too far away',
   'match.excluded.material_not_accepted': 'They do not take this material',
   'match.no_results': 'No authorised buyer found nearby. Try a bigger distance.',
+  'match.no_location': 'Location is off, so distances are rough',
+  'match.need_sync': 'Connect to the internet once to get the buyer list',
   'match.excluded_count': '{count} buyer(s) not shown',
 
   /* Handover */
@@ -127,6 +131,8 @@ export const en = {
   'handover.show_to_buyer': 'Show this to the buyer',
   'handover.code_label': 'Code',
   'handover.weight_label': 'Weight',
+  'handover.buyer': 'Buyer',
+  'handover.buyer_pays': 'Buyer pays about',
   'handover.waiting_confirm': 'Waiting for buyer to confirm',
   'handover.confirmed': 'Buyer confirmed',
   'handover.rejected': 'Buyer did not confirm',

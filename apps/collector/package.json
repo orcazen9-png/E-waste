@@ -7,10 +7,13 @@
     "start": "expo start",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "test": "node --experimental-transform-types --test \"test/**/*.test.ts\""
+    "test": "node --experimental-transform-types --test \"test/**/*.test.ts\"",
+    "web": "expo start --web",
+    "export:web": "expo export --platform web"
   },
   "dependencies": {
     "@ewaste/shared": "workspace:*",
+    "@expo/metro-runtime": "~4.0.1",
     "expo": "~52.0.0",
     "expo-build-properties": "~0.13.1",
     "expo-camera": "~16.0.7",
@@ -25,9 +28,11 @@
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.6",
     "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-native": "0.76.3",
     "react-native-qrcode-svg": "6.3.2",
-    "react-native-svg": "15.8.0"
+    "react-native-svg": "15.8.0",
+    "react-native-web": "~0.19.13"
   },
   "devDependencies": {
     "@types/node": "22.9.0",

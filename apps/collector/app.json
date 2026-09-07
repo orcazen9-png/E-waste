@@ -45,6 +45,10 @@
     ],
     "extra": {
       "apiUrl": "http://10.0.2.2:3001"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }

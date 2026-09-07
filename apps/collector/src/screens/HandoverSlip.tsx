@@ -14,7 +14,7 @@ import { Screen, Card, PrimaryButton, Banner, Muted } from '../ui/components.tsx
 import { colors, radius, spacing, type } from '../ui/theme.ts';
 import { useApp } from '../state/AppContext.tsx';
 import { speak } from '../audio/tts.ts';
-import { saveHandover } from '../db/index.ts';
+import { saveHandover } from '../db';
 
 /**
  * The handover slip.
@@ -120,8 +120,11 @@ export function HandoverSlip({
       <Card>
         <Row label={t('handover.weight_label')} value={`${lot.totalWeightKg} ${t('lot.weight_unit_kg')}`} />
         <Row label={t('lot.estimate_title')} value={formatInr(lot.estimatedValueInr)} />
-        <Row label={t('match.title')} value={match.recycler.name} />
-        <Row label={t('match.pays')} value={formatInr(match.estimatedPayoutInr)} />
+        {/* These were reusing list-screen strings: one was the "Buyers near
+            you" heading, the other a sentence with an {amount} placeholder
+            that rendered raw because it was used as a bare label. */}
+        <Row label={t('handover.buyer')} value={match.recycler.name} />
+        <Row label={t('handover.buyer_pays')} value={formatInr(match.estimatedPayoutInr)} />
       </Card>
 
       <Card>

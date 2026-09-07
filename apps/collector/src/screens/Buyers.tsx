@@ -3,7 +3,9 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   WeightedRecyclerMatcher,
   formatInr,
+  type GeoPoint,
   type Lot,
+  type Recycler,
   type RecyclerMatch,
 } from '@ewaste/shared';
 import { Screen, Card, Muted, PrimaryButton, Banner } from '../ui/components.tsx';
@@ -31,19 +33,30 @@ export function Buyers({
   const { t, tc, priceIndex, recyclers } = useApp();
   const [maxDistanceKm, setMaxDistanceKm] = useState(25);
 
+  // Reference data genuinely requires one sync. A GPS fix does not: matching
+  // runs entirely on the phone, and refusing to show any buyer because
+  // location is off - which it often is, to save battery, or indoors - fails
+  // the collector exactly when they need a buyer.
+  const needsSync = !priceIndex || recyclers.length === 0;
+
+  const exactPoint = lot.collectionPlace.point;
+  const approxPoint = useMemo(
+    () => exactPoint ?? districtCentre(recyclers, lot.collectionPlace.district),
+    [exactPoint, recyclers, lot.collectionPlace.district],
+  );
+
   const result = useMemo(() => {
-    const point = lot.collectionPlace.point;
-    if (!priceIndex || !point || recyclers.length === 0) return undefined;
+    if (!priceIndex || !approxPoint || recyclers.length === 0) return undefined;
     return new WeightedRecyclerMatcher().match({
       lot,
-      collectorPoint: point,
+      collectorPoint: approxPoint,
       recyclers,
       priceIndex,
       preferredPayment: 'cash',
       maxDistanceKm,
       limit: 8,
     });
-  }, [lot, priceIndex, recyclers, maxDistanceKm]);
+  }, [lot, priceIndex, recyclers, approxPoint, maxDistanceKm]);
 
   // Widen the search automatically rather than showing an empty screen: a
   // collector holding 20 kg of cable needs a buyer, not a filter tutorial.
@@ -61,9 +74,16 @@ export function Buyers({
         </Text>
       </Card>
 
-      {!result && (
+      {needsSync && (
         <Banner tone="warn">
-          <Text style={type.body}>{t('sync.offline')}</Text>
+          <Text style={type.body}>{t('match.need_sync')}</Text>
+        </Banner>
+      )}
+
+      {/* Location off is a different problem from no data, and says so. */}
+      {!needsSync && !exactPoint && (
+        <Banner tone="warn">
+          <Text style={type.small}>📍 {t('match.no_location')}</Text>
         </Banner>
       )}
 
@@ -140,6 +160,22 @@ export function Buyers({
       )}
     </Screen>
   );
+}
+
+/**
+ * A stand-in for the collector's position when there is no fix: the mean of
+ * the known authorised facilities in their district. Crude, but it keeps the
+ * ranking working and the distances honestly labelled as rough.
+ */
+function districtCentre(recyclers: Recycler[], district: string): GeoPoint | undefined {
+  const points = recyclers
+    .filter((r) => r.place.district === district && r.place.point)
+    .map((r) => r.place.point!);
+  if (points.length === 0) return undefined;
+  return {
+    lat: points.reduce((s, p) => s + p.lat, 0) / points.length,
+    lon: points.reduce((s, p) => s + p.lon, 0) / points.length,
+  };
 }
 
 function Badge({ glyph, text, tone }: { glyph: string; text: string; tone?: 'ok' }) {

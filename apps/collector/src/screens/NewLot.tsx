@@ -14,6 +14,7 @@ import {
   type Lot,
   type MaterialCategoryId,
   type MaterialCondition,
+  type GeoPoint,
   type MaterialItem,
   type SubCategory,
   type Valuation,
@@ -22,7 +23,7 @@ import { Screen, PictureTile, PrimaryButton, Card, Banner, Muted } from '../ui/c
 import { categoryColors, colors, radius, spacing, TOUCH_MIN, type } from '../ui/theme.ts';
 import { useApp, useValuer } from '../state/AppContext.tsx';
 import { speak } from '../audio/tts.ts';
-import { saveLot } from '../db/index.ts';
+import { saveLot } from '../db';
 
 type Step = 'photo' | 'category' | 'subcategory' | 'weight' | 'condition' | 'estimate';
 
@@ -118,20 +119,13 @@ export function NewLot({ onDone, onCancel }: { onDone: (lot: Lot) => void; onCan
 
     // Location is requested here, not at startup: asking for GPS before the
     // collector has done anything is how permission prompts get denied.
-    let point: { lat: number; lon: number; accuracyM?: number } | undefined;
-    try {
-      const permissionResult = await Location.requestForegroundPermissionsAsync();
-      if (permissionResult.granted) {
-        const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        point = {
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-          accuracyM: position.coords.accuracy ?? undefined,
-        };
-      }
-    } catch {
-      // A lot without a fix is still a lot. Traceability degrades; the sale does not.
-    }
+    //
+    // Bounded, because the comment below is only true if it is. A fix indoors,
+    // in a basement or with GPS switched off can take a very long time or
+    // never arrive, and this sits between the collector tapping "find a buyer"
+    // and anything appearing. Blocking a sale on a satellite is the wrong
+    // trade every time.
+    const point = await withTimeout(readLocation(), LOCATION_TIMEOUT_MS);
 
     const now = new Date().toISOString();
     const lot: Lot = {
@@ -159,14 +153,16 @@ export function NewLot({ onDone, onCancel }: { onDone: (lot: Lot) => void; onCan
       <Screen title={t('lot.photo_prompt')} onBack={onCancel}>
         {!permission?.granted ? (
           <Card>
-            <Text style={[type.body, { color: colors.text }]}>{t('lot.photo_prompt')}</Text>
-            <Muted>{t('onboarding.phone_why')}</Muted>
+            {/* This was showing the phone-number privacy line, which says
+                nothing about the camera and mentions payments instead. */}
+            <Muted>{t('lot.photo_why')}</Muted>
             <PrimaryButton glyph="📷" label={t('action.take_photo')} onPress={() => void requestPermission()} />
             {/* A photo makes the record provable, but refusing the camera must
-                not lock the collector out of recording material. */}
+                not lock the collector out of recording material. The label says
+                what the button does rather than a bare "Next". */}
             <PrimaryButton
               tone="neutral"
-              label={t('action.next')}
+              label={t('lot.photo_skip')}
               onPress={() => setStep('category')}
             />
           </Card>
@@ -309,8 +305,8 @@ export function NewLot({ onDone, onCancel }: { onDone: (lot: Lot) => void; onCan
       footer={
         <>
           <PrimaryButton
-            glyph="✅"
-            label={t('lot.finish')}
+            glyph={saving ? '⏳' : '✅'}
+            label={saving ? t('action.save') : t('lot.finish')}
             onPress={() => void finish()}
             disabled={saving || !valuation}
           />
@@ -396,6 +392,42 @@ function stepFor(weight: number): number {
   if (weight < 10) return 0.5;
   if (weight < 50) return 1;
   return 5;
+}
+
+/** Long enough for a warm fix, short enough not to strand someone at a scale. */
+const LOCATION_TIMEOUT_MS = 6000;
+
+async function readLocation(): Promise<GeoPoint | undefined> {
+  try {
+    const permissionResult = await Location.requestForegroundPermissionsAsync();
+    if (!permissionResult.granted) return undefined;
+    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    return {
+      lat: position.coords.latitude,
+      lon: position.coords.longitude,
+      accuracyM: position.coords.accuracy ?? undefined,
+    };
+  } catch {
+    // A lot without a fix is still a lot. Traceability degrades; the sale does not.
+    return undefined;
+  }
+}
+
+/** Resolves undefined rather than rejecting: the caller must carry on either way. */
+async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<undefined>((resolve) => {
+        timer = setTimeout(() => resolve(undefined), ms);
+      }),
+    ]);
+  } catch {
+    return undefined;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;

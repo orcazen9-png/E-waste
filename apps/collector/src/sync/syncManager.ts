@@ -18,7 +18,7 @@ import {
   readyOutbox,
   saveTransactions,
   setMeta,
-} from '../db/index.ts';
+} from '../db';
 
 /**
  * Sync.

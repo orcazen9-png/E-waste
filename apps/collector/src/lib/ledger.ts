@@ -1,4 +1,4 @@
-import type { LocalTransaction } from '../db/index.ts';
+import type { LocalTransaction } from '../db';
 
 /**
  * Ledger totals.

@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { Lot, RecyclerMatch } from '@ewaste/shared';
 
 import { AppProvider, useApp } from './src/state/AppContext.tsx';
-import { getMeta, listTransactions, setMeta } from './src/db/index.ts';
+import { getMeta, listTransactions, setMeta } from './src/db';
 import { summariseTransactions } from './src/lib/ledger.ts';
 import { colors } from './src/ui/theme.ts';
 import { Onboarding } from './src/screens/Onboarding.tsx';
@@ -55,6 +55,12 @@ function Router() {
   }, [ready]);
 
   // Home shows money; recompute whenever we land back on it.
+  //
+  // `onboarded` and `demoMode` are dependencies, not decoration: route.name is
+  // already 'home' during onboarding, so without them this effect ran once
+  // against an empty database and never again. Demo seeding happens after that
+  // first run, which is why the home screen showed zero earnings while the
+  // ledger showed six sales.
   useEffect(() => {
     if (route.name !== 'home') return;
     // Same summariser the ledger screen uses, so the two screens cannot
@@ -63,7 +69,7 @@ function Router() {
       const totals = summariseTransactions(rows);
       setTotals({ pending: totals.pendingInr, week: totals.weekInr });
     });
-  }, [route.name]);
+  }, [route.name, onboarded, demoMode]);
 
   const goHome = useMemo(() => () => setRoute({ name: 'home' }), []);
 

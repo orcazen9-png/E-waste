@@ -17,7 +17,7 @@ import {
   openDatabase,
   pendingCount,
   setMeta,
-} from '../db/index.ts';
+} from '../db';
 import { runSync, type SyncState } from '../sync/syncManager.ts';
 import { api, setAccessToken } from '../api/client.ts';
 import { DEMO_DISTRICT, seedDemoData } from '../demo/index.ts';

@@ -109,9 +109,15 @@ export class RuleBasedValuer implements Valuer {
       reasons.push('valuation.reason.small_parcel');
     }
 
+    // The same adjustment must apply to all three numbers. lowInr used to omit
+    // the bulk factor, so on a small parcel (bulk 0.95) the low bound came out
+    // ABOVE the high bound and the estimate fell outside its own range - the
+    // screen read "you should get Rs 528, between Rs 544 and Rs 533". A range
+    // that does not contain its own estimate destroys the one thing this
+    // number is for.
     return {
       estimateInr: round(adjustedRate * measure),
-      lowInr: round(low * condition * measure),
+      lowInr: round(low * condition * bulk * measure),
       highInr: round(high * condition * bulk * measure),
       ratePerUnitInr: round(adjustedRate),
       unit: sub.unit,

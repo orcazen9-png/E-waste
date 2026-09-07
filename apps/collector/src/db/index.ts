@@ -21,7 +21,11 @@ let database: SQLite.SQLiteDatabase | undefined;
  */
 let opening: Promise<SQLite.SQLiteDatabase> | undefined;
 
-export async function openDatabase(): Promise<SQLite.SQLiteDatabase> {
+export async function openDatabase(): Promise<void> {
+  await openHandle();
+}
+
+async function openHandle(): Promise<SQLite.SQLiteDatabase> {
   if (database) return database;
   if (opening) return opening;
 
@@ -50,6 +54,11 @@ export async function openDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 }
 
+/** Internal: everything below needs the handle, callers outside do not. */
+async function db_(): Promise<SQLite.SQLiteDatabase> {
+  return openHandle();
+}
+
 async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
@@ -70,13 +79,13 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 export async function getMeta(key: string): Promise<string | undefined> {
-  const db = await openDatabase();
+  const db = await db_();
   const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM meta WHERE key = ?', key);
   return row?.value;
 }
 
 export async function setMeta(key: string, value: string): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   await db.runAsync('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', key, value);
 }
 
@@ -90,7 +99,7 @@ export async function setMeta(key: string, value: string): Promise<void> {
  * server will never hear about.
  */
 export async function saveLot(lot: Lot): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   await db.withTransactionAsync(async () => {
     await db.runAsync(
       `INSERT OR REPLACE INTO lots
@@ -151,7 +160,7 @@ export async function saveLot(lot: Lot): Promise<void> {
 }
 
 export async function listLots(limit = 50): Promise<Lot[]> {
-  const db = await openDatabase();
+  const db = await db_();
   const rows = await db.getAllAsync<LotRow>(
     'SELECT * FROM lots ORDER BY collected_at DESC LIMIT ?',
     limit,
@@ -162,7 +171,7 @@ export async function listLots(limit = 50): Promise<Lot[]> {
 }
 
 export async function getLot(lotId: string): Promise<Lot | undefined> {
-  const db = await openDatabase();
+  const db = await db_();
   const row = await db.getFirstAsync<LotRow>('SELECT * FROM lots WHERE lot_id = ?', lotId);
   return row ? hydrateLot(db, row) : undefined;
 }
@@ -238,7 +247,7 @@ async function hydrateLot(db: SQLite.SQLiteDatabase, row: LotRow): Promise<Lot> 
 /* ------------------------------------------------------------------ */
 
 export async function saveHandover(record: HandoverRecord): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   await db.withTransactionAsync(async () => {
     await db.runAsync(
       `INSERT OR REPLACE INTO handovers
@@ -279,7 +288,7 @@ export async function saveHandover(record: HandoverRecord): Promise<void> {
 }
 
 export async function getHandoverForLot(lotId: string): Promise<HandoverRecord | undefined> {
-  const db = await openDatabase();
+  const db = await db_();
   const row = await db.getFirstAsync<Record<string, unknown>>(
     'SELECT * FROM handovers WHERE lot_id = ? ORDER BY created_at DESC LIMIT 1',
     lotId,
@@ -329,7 +338,7 @@ export type TransactionRow = Pick<
 >;
 
 export async function saveTransactions(transactions: TransactionRow[]): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   await db.withTransactionAsync(async () => {
     for (const t of transactions) {
       await db.runAsync(
@@ -366,7 +375,7 @@ export interface LocalTransaction {
 }
 
 export async function listTransactions(limit = 100): Promise<LocalTransaction[]> {
-  const db = await openDatabase();
+  const db = await db_();
   const rows = await db.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM transactions ORDER BY handover_at DESC LIMIT ?',
     limit,
@@ -407,7 +416,7 @@ async function enqueueInTransaction(
 }
 
 export async function readyOutbox(limit = 50): Promise<OutboxEntry[]> {
-  const db = await openDatabase();
+  const db = await db_();
   const rows = await db.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM outbox WHERE next_attempt_at <= ? ORDER BY client_updated_at ASC LIMIT ?',
     new Date().toISOString(),
@@ -427,21 +436,21 @@ export async function readyOutbox(limit = 50): Promise<OutboxEntry[]> {
 }
 
 export async function pendingCount(): Promise<number> {
-  const db = await openDatabase();
+  const db = await db_();
   const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM outbox');
   return row?.n ?? 0;
 }
 
 export async function dropFromOutbox(changeIds: string[]): Promise<void> {
   if (changeIds.length === 0) return;
-  const db = await openDatabase();
+  const db = await db_();
   const placeholders = changeIds.map(() => '?').join(',');
   await db.runAsync(`DELETE FROM outbox WHERE change_id IN (${placeholders})`, ...changeIds);
 }
 
 /** Schedules a retry with exponential backoff rather than spinning on failure. */
 export async function deferOutbox(changeId: string, attempts: number, error: string): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   const nextAt = new Date(Date.now() + backoffMs(attempts + 1)).toISOString();
   await db.runAsync(
     'UPDATE outbox SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE change_id = ?',
@@ -457,7 +466,7 @@ export async function deferOutbox(changeId: string, attempts: number, error: str
 /* ------------------------------------------------------------------ */
 
 export async function cacheReference(key: string, version: string, payload: unknown): Promise<void> {
-  const db = await openDatabase();
+  const db = await db_();
   await db.runAsync(
     'INSERT OR REPLACE INTO reference_cache (key, version, payload, fetched_at) VALUES (?,?,?,?)',
     key,
@@ -470,7 +479,7 @@ export async function cacheReference(key: string, version: string, payload: unkn
 export async function readReference<T>(
   key: string,
 ): Promise<{ version: string; payload: T; fetchedAt: string } | undefined> {
-  const db = await openDatabase();
+  const db = await db_();
   const row = await db.getFirstAsync<Record<string, unknown>>(
     'SELECT * FROM reference_cache WHERE key = ?',
     key,

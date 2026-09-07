@@ -4,7 +4,7 @@ import { formatInr } from '@ewaste/shared';
 import { Screen, Card, Muted } from '../ui/components.tsx';
 import { colors, radius, spacing, type } from '../ui/theme.ts';
 import { useApp } from '../state/AppContext.tsx';
-import { listTransactions, type LocalTransaction } from '../db/index.ts';
+import { listTransactions, type LocalTransaction } from '../db';
 import { summariseTransactions } from '../lib/ledger.ts';
 
 /**
@@ -48,7 +48,13 @@ export function Ledger({ onBack }: { onBack: () => void }) {
               {`${row.totalWeightKg} kg`}
             </Text>
             <Muted>
-              {new Date(row.handoverAt).toLocaleDateString()} ·{' '}
+              {/* Explicit locale: the default rendered 9/5/2026 on a Marathi
+                  screen, which reads as 9 May to the person holding it. */}
+              {new Date(row.handoverAt).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+              })}{' '}
+              ·{' '}
               {t(`ledger.${row.paymentMode}` as Parameters<typeof t>[0])}
             </Muted>
             {row.anomalyFlags.length > 0 && (

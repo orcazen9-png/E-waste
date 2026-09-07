@@ -169,6 +169,30 @@ describe('valuation', () => {
     assert.ok(burnt.estimateInr < intact.estimateInr * 0.6);
   });
 
+  it('always returns a range that contains its own estimate', () => {
+    // The bug this covers: the low bound omitted the bulk factor, so a small
+    // parcel produced low > high with the estimate outside both. Sweeping
+    // weights across every bulk band and every condition is what catches it -
+    // the original test used a single 10 kg lot, where bulk is exactly 1.
+    const weights = [0.2, 0.6, 1, 1.9, 2, 8, 12, 49, 50, 120, 200, 500];
+    const conditions = ['intact', 'partially_dismantled', 'broken', 'burnt', 'wet'] as const;
+    for (const weightKg of weights) {
+      for (const condition of conditions) {
+        for (const subCategoryId of ['cable_copper_house', 'battery_li_ion_laptop']) {
+          const v = valuer.estimate({ subCategoryId, weightKg, condition, district: 'Pune' });
+          assert.ok(
+            v.lowInr <= v.highInr,
+            `low ${v.lowInr} > high ${v.highInr} for ${subCategoryId} ${weightKg}kg ${condition}`,
+          );
+          assert.ok(
+            v.lowInr <= v.estimateInr && v.estimateInr <= v.highInr,
+            `estimate ${v.estimateInr} outside [${v.lowInr}, ${v.highInr}] for ${subCategoryId} ${weightKg}kg ${condition}`,
+          );
+        }
+      }
+    }
+  });
+
   it('sums a multi-item lot', () => {
     const lot = valueLot(
       valuer,
@@ -567,6 +591,22 @@ describe('i18n', () => {
     );
     assert.equal(translateCoded('en', 'valuation.reason.condition:burnt'), 'Adjusted because it is Burnt');
     assert.equal(translateCoded('mr', 'match.reason.above_fair:12'), 'नेहमीच्या भावापेक्षा 12% जास्त देतात');
+  });
+
+  it('uses the same placeholders in every language', () => {
+    // A key whose translations disagree on placeholders renders a raw {amount}
+    // to whichever language was missed. Found exactly that on the handover
+    // slip, in Marathi only.
+    const placeholders = (value: string) => (value.match(/\{\w+\}/g) ?? []).sort().join(',');
+    for (const key of Object.keys(en) as Array<keyof typeof en>) {
+      for (const locale of ['mr', 'hi'] as const) {
+        assert.equal(
+          placeholders(BUNDLES[locale][key]),
+          placeholders(en[key]),
+          `placeholder mismatch for ${key} in ${locale}`,
+        );
+      }
+    }
   });
 
   it('formats rupees with Indian digit grouping', () => {

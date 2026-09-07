@@ -78,6 +78,19 @@ ends up trusting a made-up price.
 
 Regenerate the bundle with `pnpm data:demo` after changing the seed dataset.
 
+## Running it in a browser
+
+```bash
+pnpm --filter @ewaste/collector web        # or: export:web for a static build
+```
+
+expo-sqlite has no web build, so `src/db/index.web.ts` provides the same API
+over localStorage and Metro picks it automatically for the web platform. This
+exists so the app can be opened, driven and demonstrated without a device, and
+so a browser can run it in automated tests. **The phone is the real target**:
+the web store has none of SQLite's durability guarantees, the camera and
+text-to-speech behave differently, and it is not what ships to a collector.
+
 ## Verified
 
 - Typechecks under `strict` with `noUncheckedIndexedAccess`.
